@@ -37,10 +37,10 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
     && mv wp-cli.phar /usr/local/bin/wp
 
 # Diretório padrão do PHP-FPM
-WORKDIR /var/www/html
+WORKDIR /home/nmatondo/data
 
 # Copiar WordPress (teu site)
-COPY organic/ /var/www/html/
+COPY organic/ /home/nmatondo/data/
 
 # Configuração do PHP-FPM
 COPY ./conf/www.conf /usr/local/etc/php-fpm.d/www.conf

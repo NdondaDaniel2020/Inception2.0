@@ -8,15 +8,10 @@ services:
     networks:
       - network
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mariadb_data:/home/nmatondo/data
     restart: always
     env_file:
       - ./.env
-    environment:
-      MARIADB_DATABASE: organic
-      MARIADB_USER: nmatondo
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
-      MARIADB_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_root_password
       - db_password
@@ -42,16 +37,11 @@ services:
     restart: always
     env_file:
       - ./.env
-    environment:
-      WORDPRESS_DB_HOST: mariadb:3306
-      WORDPRESS_DB_NAME: organic
-      WORDPRESS_DB_USER: nmatondo
-      DOMAIN_NAME: nmatondo.42.fr
     secrets:
       - db_password
       - credentials
     volumes:
-      - wordpress_data:/var/www/html
+      - wordpress_data:/home/nmatondo/data
 
   nginx:
     build:
@@ -66,7 +56,7 @@ services:
       - network
     restart: always
     volumes:
-      - wordpress_data:/var/www/html
+      - wordpress_data:/home/nmatondo/data
     env_file:
       - ./.env
     labels:

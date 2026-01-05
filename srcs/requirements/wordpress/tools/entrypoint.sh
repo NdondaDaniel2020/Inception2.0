@@ -24,9 +24,9 @@ fi
 # --------------------------------------------------
 # Criar wp-config.php ANTES de qualquer wp-cli
 # --------------------------------------------------
-if [ -f /var/www/html/wp-config-docker.php ]; then
+if [ -f /home/nmatondo/data/wp-config-docker.php ]; then
     echo "📝 Gerando wp-config.php..."
-    cp -f /var/www/html/wp-config-docker.php /var/www/html/wp-config.php
+    cp -f /home/nmatondo/data/wp-config-docker.php /home/nmatondo/data/wp-config.php
 fi
 
 # --------------------------------------------------
@@ -56,7 +56,7 @@ echo "✅ MariaDB está pronto!"
 # --------------------------------------------------
 # Instalar WordPress se necessário
 # --------------------------------------------------
-if wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; then
+if wp core is-installed --allow-root --path=/home/nmatondo/data >/dev/null 2>&1; then
     echo "ℹ️ WordPress já instalado"
 else
     echo "📦 Instalando WordPress..."
@@ -72,7 +72,7 @@ else
 
     wp core install \
         --allow-root \
-        --path=/var/www/html \
+        --path=/home/nmatondo/data \
         --url="${DOMAIN_NAME:-localhost}" \
         --title="Inception WordPress" \
         --admin_user="$WP_ADMIN_USER" \
@@ -86,7 +86,7 @@ fi
 # --------------------------------------------------
 # Ajustar permissões
 # --------------------------------------------------
-chown -R www-data:www-data /var/www/html
+chown -R www-data:www-data /home/nmatondo/data
 
 # --------------------------------------------------
 # Iniciar PHP-FPM

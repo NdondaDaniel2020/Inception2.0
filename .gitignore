@@ -1,0 +1,8 @@
+# Secrets - NUNCA commitar senhas reais
+secrets/*.txt
+
+# Environment - NUNCA commitar .env com senhas reais
+srcs/.env
+
+# Docker volumes data
+/home/nmatondo/data/
