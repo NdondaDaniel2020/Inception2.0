@@ -65,9 +65,13 @@ else
     if [ -f /run/secrets/credentials ]; then
         WP_ADMIN_USER="$(sed -n '1p' /run/secrets/credentials)"
         WP_ADMIN_PASS="$(sed -n '2p' /run/secrets/credentials)"
+        WP_USER="$(sed -n '3p' /run/secrets/credentials)"
+        WP_PASS="$(sed -n '4p' /run/secrets/credentials)"
     else
         WP_ADMIN_USER="${WP_ADMIN_USER:-admin}"
         WP_ADMIN_PASS="${WP_ADMIN_PASS:-password}"
+        WP_USER="${WP_USER:-usuario_normal}"
+        WP_PASS="${WP_PASS:-senha123}"
     fi
 
     wp core install \
@@ -79,6 +83,12 @@ else
         --admin_password="$WP_ADMIN_PASS" \
         --admin_email="${WP_ADMIN_USER}@student.42.fr" \
         --skip-email
+
+    wp user create "$WP_USER" "$WP_USER@student.42.fr" \
+    --role=author \
+    --user_pass="$WP_PASS" \
+    --allow-root \
+    --path=/home/nmatondo/data
 
     echo "✅ WordPress instalado com sucesso!"
 fi
