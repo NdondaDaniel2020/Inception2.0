@@ -1,0 +1,17 @@
+# Forçar LF em todos os arquivos de texto
+* text=auto eol=lf
+
+# Específico para scripts shell
+*.sh text eol=lf
+
+# Dockerfiles
+Dockerfile* text eol=lf
+
+# Arquivos de configuração
+*.conf text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.env text eol=lf
+
+# Documentação
+*.md text eol=lf
