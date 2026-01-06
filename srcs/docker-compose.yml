@@ -8,7 +8,7 @@ services:
     networks:
       - network
     volumes:
-      - mariadb_data:/home/nmatondo/data
+      - mariadb_data:/var/lib/mysql
     restart: always
     env_file:
       - ./.env
@@ -41,7 +41,7 @@ services:
       - db_password
       - credentials
     volumes:
-      - wordpress_data:/home/nmatondo/data
+      - wordpress_data:/var/www/html
 
   nginx:
     build:
@@ -56,14 +56,9 @@ services:
       - network
     restart: always
     volumes:
-      - wordpress_data:/home/nmatondo/data
+      - wordpress_data:/var/www/html
     env_file:
       - ./.env
-    labels:
-      - "desktop.docker.io/wsl-distro=Ubuntu"
-      - "com.docker.compose.project=inception"
-      - "desktop.docker.io/port.443/protocol=https"
-      - "desktop.docker.io/port.443/host=nmatondo.42.fr"
 
 secrets:
   db_root_password:
@@ -79,6 +74,14 @@ networks:
 volumes:
   mariadb_data:
     driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /home/nmatondo/data/mariadb
   wordpress_data:
     driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /home/nmatondo/data/wordpress
   

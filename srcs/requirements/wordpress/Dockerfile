@@ -36,10 +36,10 @@ RUN set -x \
 RUN ln -sf /usr/bin/php83 /usr/bin/php
 
 # Diretório padrão do WordPress
-WORKDIR /home/nmatondo/data
+WORKDIR /var/www/html
 
 # Copiar WordPress (teu site)
-COPY organic/ /home/nmatondo/data/
+COPY organic/ /var/www/html/
 
 # Configuração do PHP-FPM (caminho correto para Alpine)
 COPY ./conf/www.conf /etc/php83/php-fpm.d/www.conf
@@ -51,7 +51,7 @@ COPY ./tools/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Permissões
-RUN chown -R www-data:www-data /home/nmatondo/data
+RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 9000
 
