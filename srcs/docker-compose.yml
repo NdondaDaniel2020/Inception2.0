@@ -74,14 +74,14 @@ networks:
 volumes:
   mariadb_data:
     driver: local
-    # driver_opts:
-    #   type: none
-    #   o: bind
-    #   device: /home/nmatondo/data/mariadb
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nmatondo/data/mariadb
   wordpress_data:
     driver: local
-    # driver_opts:
-    #   type: none
-    #   o: bind
-    #   device: /home/nmatondo/data/wordpress
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nmatondo/data/wordpress
   
