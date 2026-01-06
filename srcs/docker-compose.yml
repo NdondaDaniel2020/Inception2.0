@@ -81,4 +81,4 @@ volumes:
     driver: local
   wordpress_data:
     driver: local
-    
+  

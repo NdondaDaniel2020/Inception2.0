@@ -102,4 +102,4 @@ chown -R www-data:www-data /home/nmatondo/data
 # Iniciar PHP-FPM
 # --------------------------------------------------
 echo "🚀 Iniciando PHP-FPM..."
-exec php-fpm -F
+exec php-fpm83 -F
