@@ -22,11 +22,26 @@ else
 fi
 
 # --------------------------------------------------
+# Ler senha do Redis via Docker Secret
+# --------------------------------------------------
+if [ -f /run/secrets/redis_password ]; then
+    export REDIS_PASSWORD="$(cat /run/secrets/redis_password)"
+else
+    echo "⚠️  Secret redis_password não encontrado - Redis sem senha"
+    export REDIS_PASSWORD=""
+fi
+
+# --------------------------------------------------
 # Criar wp-config.php ANTES de qualquer wp-cli
 # --------------------------------------------------
 if [ -f /var/www/html/wp-config-docker.php ]; then
     echo "📝 Gerando wp-config.php..."
     cp -f /var/www/html/wp-config-docker.php /var/www/html/wp-config.php
+    
+    # Substituir placeholder da senha Redis
+    if [ -n "$REDIS_PASSWORD" ]; then
+        sed -i "s/REDIS_PASSWORD_PLACEHOLDER/$REDIS_PASSWORD/g" /var/www/html/wp-config.php
+    fi
 fi
 
 # --------------------------------------------------
