@@ -84,4 +84,3 @@ volumes:
       type: none
       o: bind
       device: /home/nmatondo/data/wordpress
-  

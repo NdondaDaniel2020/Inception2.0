@@ -11,6 +11,7 @@ all: build up
 
 build:
 	@echo "🔨 Building Docker images..."
+	@mkdir -p $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) build
 
 up:
@@ -33,7 +34,7 @@ fclean: clean
 	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
 	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true
 	@docker network rm $$(docker network ls -q) 2>/dev/null || true
-# 	@sudo rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress 2>/dev/null || true
+	@rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress 2>/dev/null || true
 
 logs:
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) logs -f
@@ -52,6 +53,7 @@ bonus: bbuild bup
 
 bbuild:
 	@echo "🔨 Building Docker images..."
+	@mkdir -p $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress
 	@docker compose -p $(BONUS_PROJECT_NAME) -f $(COMPOSE_BONUS_FILE) build
 
 bup:
@@ -74,7 +76,7 @@ bfclean: clean
 	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
 	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true
 	@docker network rm $$(docker network ls -q) 2>/dev/null || true
-# 	@sudo rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress 2>/dev/null || true
+	@rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress 2>/dev/null || true
 
 blogs:
 	@docker compose -p $(BONUS_PROJECT_NAME) -f $(COMPOSE_BONUS_FILE) logs -f
