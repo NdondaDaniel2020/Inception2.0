@@ -40,6 +40,7 @@ services:
     secrets:
       - db_password
       - credentials
+      - redis_password
     volumes:
       - wordpress_data:/var/www/html
 
@@ -79,6 +80,23 @@ services:
       - db_root_password
       - db_password
 
+  redis:
+    build:
+      context: ./requirements/bonus/redis
+      dockerfile: Dockerfile
+    container_name: redis
+    networks:
+      - network
+    restart: always
+    env_file:
+      - ./.env
+    secrets:
+      - redis_password
+    volumes:
+      - redis_data:/data
+    depends_on:
+      - mariadb
+
 secrets:
   db_root_password:
     file: ../secrets/db_root_password.txt
@@ -86,7 +104,8 @@ secrets:
     file: ../secrets/db_password.txt
   credentials:
     file: ../secrets/credentials.txt
-
+  redis_password:
+    file: ../secrets/redis_password.txt
 
 networks:
   network:
@@ -104,3 +123,9 @@ volumes:
       type: none
       o: bind
       device: /home/nmatondo/data/wordpress
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nmatondo/data/redis
