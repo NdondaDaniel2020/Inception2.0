@@ -60,6 +60,25 @@ services:
     env_file:
       - ./.env
 
+  adminer:
+    build:
+      context: ./requirements/bonus/adminer
+      dockerfile: Dockerfile
+    container_name: adminer
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - network
+    restart: always
+    env_file:
+      - ./.env
+    secrets:
+      - db_root_password
+      - db_password
+
 secrets:
   db_root_password:
     file: ../secrets/db_root_password.txt
@@ -67,6 +86,7 @@ secrets:
     file: ../secrets/db_password.txt
   credentials:
     file: ../secrets/credentials.txt
+
 
 networks:
   network:
