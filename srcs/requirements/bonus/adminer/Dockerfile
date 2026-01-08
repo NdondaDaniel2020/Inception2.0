@@ -1,5 +1,4 @@
-# Base Alpine 3.19+ com PHP 8.3 (padrão em 2026)
-FROM alpine:latest
+FROM alpine:3.23
 
 # Instala PHP e as extensões necessárias para o Adminer
 RUN apk add --no-cache \
