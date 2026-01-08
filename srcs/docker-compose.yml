@@ -97,6 +97,26 @@ services:
     depends_on:
       - mariadb
 
+  ftp:
+    build:
+      context: ./requirements/bonus/ftp
+      dockerfile: Dockerfile
+    container_name: ftp
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    networks:
+      - network
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - wordpress_data:/var/www/html
+    depends_on:
+      - wordpress
+    secrets:
+      - ftp_credentials
+
 secrets:
   db_root_password:
     file: ../secrets/db_root_password.txt
@@ -106,6 +126,8 @@ secrets:
     file: ../secrets/credentials.txt
   redis_password:
     file: ../secrets/redis_password.txt
+  ftp_credentials:
+    file: ../secrets/ftp_credentials.txt
 
 networks:
   network:
