@@ -1,0 +1,34 @@
+# Configuração do Elasticsearch para Inception
+
+# Nome do cluster
+cluster.name: inception-cluster
+
+# Nome do node
+node.name: inception-node-1
+
+# Diretórios de dados e logs
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+
+# Network settings
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+# Descoberta de nós (single node para desenvolvimento)
+discovery.type: single-node
+
+# Desabilitar segurança para desenvolvimento local
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: false
+xpack.security.transport.ssl.enabled: false
+
+# Desabilitar ML (binários nativos incompatíveis com Alpine)
+xpack.ml.enabled: false
+
+# Memória
+bootstrap.memory_lock: false
+
+# Configurações de índice
+action.auto_create_index: true

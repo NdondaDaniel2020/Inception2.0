@@ -1,3 +1,5 @@
 {
-  "gitlens.ai.experimental.generateCommitMessage.locale": "pt-BR"
+  "gitlens.ai.experimental.generateCommitMessage.locale": "pt-BR",
+  "gitlens.ai.experimental.generateCommitMessage.prompt": "Gere uma mensagem de commit em português brasileiro seguindo o padrão Conventional Commits. Use os tipos: feat, fix, docs, style, refactor, test, chore. A mensagem deve ser clara e concisa.",
+  "gitlens.ai.experimental.model": "anthropic:claude-3-5-sonnet"
 }

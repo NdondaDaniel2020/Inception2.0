@@ -30,6 +30,8 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     ports:
       - "9000:9000"
     networks:
@@ -117,6 +119,28 @@ services:
     secrets:
       - ftp_credentials
 
+  elasticsearch:
+    build:
+      context: ./requirements/bonus/elasticsearch
+      dockerfile: Dockerfile
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - network
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - elasticsearch_data:/var/lib/elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://nmatondo.42.fr:9200/_cluster/health || exit 1"]
+      start_period: 60s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 secrets:
   db_root_password:
     file: ../secrets/db_root_password.txt
@@ -151,3 +175,9 @@ volumes:
       type: none
       o: bind
       device: /home/nmatondo/data/redis
+  elasticsearch_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nmatondo/data/elasticsearch
