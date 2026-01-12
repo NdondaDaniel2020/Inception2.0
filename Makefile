@@ -10,7 +10,7 @@ bonus: bonus_build bonus_up
 
 build:
 	@echo "🔨 Building Docker images..."
-	@mkdir -p $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis
+	@mkdir -p $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) build mariadb wordpress nginx
 
 up:
@@ -33,7 +33,7 @@ fclean: clean
 	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
 	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true
 	@docker network rm $$(docker network ls -q) 2>/dev/null || true
-	@rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis 2>/dev/null || true
+	@rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis $(DATA_PATH)/elasticsearch 2>/dev/null || true
 
 logs:
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) logs -f
@@ -47,7 +47,7 @@ status:
 
 bonus_build:
 	@echo "🔨 Building Docker images..."
-	@mkdir -p $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis
+	@mkdir -p $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis $(DATA_PATH)/elasticsearch
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) build
 
 bonus_up:
