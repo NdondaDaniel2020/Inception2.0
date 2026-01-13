@@ -47,7 +47,7 @@ status:
 
 bonus_build:
 	@echo "🔨 Building Docker images..."
-	@mkdir -p $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis $(DATA_PATH)/elasticsearch
+	@mkdir -p $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis $(DATA_PATH)/elasticsearch $(DATA_PATH)/myprofile
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) build
 
 bonus_up:
