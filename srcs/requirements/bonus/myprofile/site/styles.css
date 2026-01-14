@@ -79,6 +79,7 @@ nav {
     justify-content: center;
     padding: 2rem;
     margin-top: 60px;
+    transition: opacity 0.3s ease;
 }
 
 .hero-content {
@@ -524,6 +525,11 @@ footer {
     .hero-content {
         grid-template-columns: 1fr;
         text-align: center;
+    }
+
+    .hero-image {
+        order: -1;
+        margin-bottom: 2rem;
     }
 
     .hero-text h1 {

@@ -21,7 +21,7 @@ function reveal() {
     reveals.forEach(element => {
         const windowHeight = window.innerHeight; // Altura da janela
         const elementTop = element.getBoundingClientRect().top; // Posição do elemento
-        const elementVisible = 150; // Pixels antes de aparecer
+        const elementVisible = 250; // Pixels antes de aparecer
         
         // Se o elemento está visível, adiciona a classe 'active'
         if (elementTop < windowHeight - elementVisible) {
@@ -77,14 +77,29 @@ document.querySelector('.contact-form').addEventListener('submit', function(e) {
     this.reset();
 });
 
-// ===== EFEITO PARALLAX NO HERO =====
-// Cria um efeito de profundidade ao rolar a página
+// ===== EFEITO PARALLAX E FADE NO HERO =====
+// Cria um efeito de profundidade e desaparece quando chega na jornada
 window.addEventListener('scroll', () => {
     const scrolled = window.pageYOffset; // Quanto a página foi rolada
     const hero = document.querySelector('.hero');
+    const timelineSection = document.querySelector('.timeline-section');
     
-    if (hero) {
+    if (hero && timelineSection) {
         // Move o hero mais devagar que o scroll (efeito parallax)
         hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+        
+        // Calcula a posição da seção de jornada
+        const timelineTop = timelineSection.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight;
+        
+        // Quando a jornada está entrando na tela, hero desaparece gradualmente
+        if (timelineTop < windowHeight) {
+            const fadeStart = windowHeight;
+            const fadeEnd = windowHeight * 0.3;
+            const opacity = Math.max(0, Math.min(1, (timelineTop - fadeEnd) / (fadeStart - fadeEnd)));
+            hero.style.opacity = opacity;
+        } else {
+            hero.style.opacity = 1;
+        }
     }
 });
