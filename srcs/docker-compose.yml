@@ -58,7 +58,6 @@ services:
     restart: always
     volumes:
       - wordpress_data:/var/www/html
-      - myprofile_data:/var/www/myprofile
     env_file:
       - ./.env
 
