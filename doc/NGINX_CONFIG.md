@@ -1460,42 +1460,74 @@ location ~ /\.well-known {
 
 ```nginx
 location /myprofile/ {
-    proxy_pass http://myprofile:8888/;
+    set $_myprofile "myprofile:8888";
+    proxy_pass http://$_myprofile;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+
+    error_page 502 503 504 = /service-unavailable.html;
 }
 ```
 
-#### proxy_pass
+#### set $_myprofile
 
 ```nginx
-proxy_pass http://myprofile:8888/;
+set $_myprofile "myprofile:8888";
 ```
 
 **Explicação:**
-- Encaminha requisições para servidor backend
-- **Endereço:** `http://myprofile:8888/`
-  - `myprofile` = Nome do container Docker
-  - `8888` = Porta do serviço backend
-  - `/` final = Remove `/myprofile` do URI
+- Define variável `$_myprofile` com endereço do backend
+- **Sintaxe:** `set $variavel "valor";`
+- **Escopo:** Válida apenas neste location block
+- **Uso:** Permite configuração dinâmica
 
-**Comportamento com/sem `/` final:**
-
-**COM `/` (configuração atual):**
-```
-Cliente: /myprofile/index.html
-Backend recebe: /index.html
-```
-
-**SEM `/`:**
+**Vantagens de usar variável:**
 ```nginx
+# ❌ Hard-coded
 proxy_pass http://myprofile:8888;
+
+# ✅ Com variável
+set $_myprofile "myprofile:8888";
+proxy_pass http://$_myprofile;
 ```
+
+- **Manutenibilidade:** Fácil alterar endereço
+- **Legibilidade:** Nome descritivo
+- **Reutilização:** Mesmo padrão para múltiplos backends
+
+#### error_page
+
+```nginx
+error_page 502 503 504 = /service-unavailable.html;
 ```
-Cliente: /myprofile/index.html
-Backend recebe: /myprofile/index.html
+
+**Explicação:**
+- **502 Bad Gateway:** Backend não responde
+- **503 Service Unavailable:** Backend sobrecarregado
+- **504 Gateway Timeout:** Backend demorou demais
+- **Ação:** Redireciona para página de erro customizada
+
+**Funcionamento:**
+```
+Backend down (502/503/504)
+          ↓
+NGINX intercepta erro
+          ↓
+Serve /service-unavailable.html
+          ↓
+Cliente vê página amigável
+```
+
+**Sem error_page:**
+```
+Backend down → Cliente vê erro feio do NGINX
+```
+
+**Com error_page:**
+```
+Backend down → Cliente vê página customizada
 ```
 
 **Exemplo visual:**
@@ -1504,7 +1536,8 @@ URL externa: https://nmatondo.42.fr/myprofile/about.html
               ↓
         NGINX location /myprofile/
               ↓
-    proxy_pass http://myprofile:8888/
+    set $_myprofile "myprofile:8888"
+    proxy_pass http://$_myprofile
               ↓
 URL interna: http://myprofile:8888/about.html
               ↓
@@ -1689,6 +1722,161 @@ $is_https = ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
 if ($is_https) {
     // Force HTTPS URLs
 }
+```
+
+---
+
+### Location /adminer/ (Reverse Proxy)
+
+```nginx
+location /adminer/ {
+    set $_adminer "adminer:8080";
+    proxy_pass http://$_adminer;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    
+    error_page 502 503 504 = /service-unavailable.html;
+}
+```
+
+#### set $_adminer
+
+```nginx
+set $_adminer "adminer:8080";
+```
+
+**Explicação:**
+- Define variável `$_adminer` com endereço do backend
+- **Sintaxe:** `set $variavel "valor";`
+- **Escopo:** Válida apenas neste location block
+- **Uso:** Permite configuração dinâmica
+
+**Vantagens de usar variável:**
+```nginx
+# ❌ Hard-coded
+proxy_pass http://adminer:8080;
+
+# ✅ Com variável
+set $_adminer "adminer:8080";
+proxy_pass http://$_adminer;
+```
+
+- **Manutenibilidade:** Fácil alterar endereço
+- **Legibilidade:** Nome descritivo
+- **Reutilização:** Mesmo padrão para múltiplos backends
+
+#### error_page
+
+```nginx
+error_page 502 503 504 = /service-unavailable.html;
+```
+
+**Explicação:**
+- **502 Bad Gateway:** Backend não responde
+- **503 Service Unavailable:** Backend sobrecarregado
+- **504 Gateway Timeout:** Backend demorou demais
+- **Ação:** Redireciona para página de erro customizada
+
+**Funcionamento:**
+```
+Backend down (502/503/504)
+          ↓
+NGINX intercepta erro
+          ↓
+Serve /service-unavailable.html
+          ↓
+Cliente vê página amigável
+```
+
+**Sem error_page:**
+```
+Backend down → Cliente vê erro feio do NGINX
+```
+
+**Com error_page:**
+```
+Backend down → Cliente vê página customizada
+```
+
+---
+
+### Location = /service-unavailable.html (Error Page)
+
+```nginx
+location = /service-unavailable.html {
+    root /usr/share/nginx/html;
+    internal;
+}
+```
+
+#### Location Modifier: =
+
+```nginx
+location = /service-unavailable.html { }
+```
+
+- **`=`**: Match exato (exact match)
+- **Prioridade:** Mais alta possível
+- **Match:** Apenas `/service-unavailable.html`
+- **Não match:** `/service-unavailable.html?param=1`, `/other.html`
+
+#### root
+
+```nginx
+root /usr/share/nginx/html;
+```
+
+- **Diretório:** `/usr/share/nginx/html`
+- **Ficheiro servido:** `/usr/share/nginx/html/service-unavailable.html`
+
+#### internal
+
+```nginx
+internal;
+```
+
+**Explicação:**
+- **Função:** Bloqueia acesso direto à URL
+- **Comportamento:** 
+  - ✅ Acesso via error_page (interno)
+  - ❌ Acesso direto do cliente (404)
+
+**Por que internal?**
+
+**Sem internal:**
+```
+Cliente: https://site.com/service-unavailable.html
+          ↓
+✅ NGINX serve página de erro diretamente
+          ↓
+Cliente vê página de erro sem erro real
+```
+
+**Com internal:**
+```
+Cliente: https://site.com/service-unavailable.html
+          ↓
+❌ 404 Not Found
+          ↓
+Cliente não consegue acessar diretamente
+
+Backend down → error_page → internal location
+          ↓
+✅ Página de erro mostrada apenas quando necessário
+```
+
+**Uso típico:**
+```nginx
+# Página de erro customizada
+location = /50x.html {
+    root /usr/share/nginx/html;
+    internal;
+}
+
+# Em qualquer location
+error_page 500 502 503 504 /50x.html;
 ```
 
 ---
@@ -1901,5 +2089,5 @@ add_header Content-Security-Policy "default-src 'self' https:; script-src 'self'
 ---
 
 **Última atualização:** Janeiro 2026  
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Autor:** Projeto Inception - 42 School
