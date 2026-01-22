@@ -46,6 +46,8 @@ http {                                    # Contexto: http
     include       mime.types;
     default_type  application/octet-stream;
 
+    resolver 127.0.0.11 valid=30s;        # DNS resolver (Docker)
+
     server {                              # Contexto: server
         listen 443 ssl;
         server_name nmatondo.42.fr;
@@ -56,8 +58,8 @@ http {                                    # Contexto: http
         location / { }                    # Contexto: location
         location ~ \.php$ { }
         location ~ /\.ht { }
-        location /myprofile/ { }
-        location /adminer/ { }
+        location /myprofile/ { }          # Reverse proxy com rewrite
+        location /adminer/ { }            # Reverse proxy com rewrite
     }
 }
 ```
@@ -262,11 +264,120 @@ http {
     include       mime.types;
     default_type  application/octet-stream;
 
+    resolver 127.0.0.11 valid=30s;
+
     server {
         # ...
     }
 }
 ```
+
+### resolver
+
+```nginx
+resolver 127.0.0.11 valid=30s;
+```
+
+#### Explicação Detalhada
+
+- **Contexto:** `http`, `server`, `location`
+- **Descrição:** Define servidor DNS para resolução de nomes em tempo de execução
+- **Valor:** `127.0.0.11` (DNS interno do Docker)
+- **TTL:** `valid=30s` (cache de resolução por 30 segundos)
+
+#### Quando é Necessário?
+
+**Resolução estática vs dinâmica:**
+
+```nginx
+# Resolução estática (em tempo de configuração)
+proxy_pass http://backend:8080;
+# ✅ Nome resolvido quando NGINX inicia
+# ❌ Se backend mudar de IP, requer reload
+
+# Resolução dinâmica (em tempo de execução)
+set $backend "backend:8080";
+proxy_pass http://$backend;
+# ⚠️ Requer resolver configurado!
+# ✅ Nome resolvido a cada requisição
+```
+
+**Nossa configuração usa variáveis:**
+```nginx
+set $_myprofile_proxy "myprofile:8888";
+proxy_pass http://$_myprofile_proxy;
+# ↑ Requer resolver!
+```
+
+#### DNS Docker (127.0.0.11)
+
+**Funcionamento:**
+- Docker fornece servidor DNS interno
+- Endereço sempre `127.0.0.11` (dentro de containers)
+- Resolve nomes de serviços Docker Compose
+- Atualiza automaticamente quando containers mudam
+
+**Resolução:**
+```
+myprofile → 172.18.0.5 (IP do container)
+adminer → 172.18.0.6
+wordpress → 172.18.0.7
+```
+
+#### Parâmetro valid
+
+```nginx
+resolver 127.0.0.11 valid=30s;
+```
+
+- **Função:** Tempo de cache da resolução DNS
+- **Valor:** `30s` (30 segundos)
+- **Benefício:** Reduz queries DNS repetitivas
+
+**Valores comuns:**
+- `valid=30s` - Balanceado (configuração atual)
+- `valid=10s` - Containers dinâmicos
+- `valid=300s` - Ambientes estáveis
+
+#### Sem Resolver Configurado
+
+**Erro típico:**
+```
+no resolver defined to resolve myprofile
+```
+
+**Quando ocorre:**
+```nginx
+set $backend "myprofile:8888";
+proxy_pass http://$backend;
+# ↑ Sem resolver = ERRO!
+```
+
+**Solução:**
+```nginx
+resolver 127.0.0.11 valid=30s;
+set $backend "myprofile:8888";
+proxy_pass http://$backend;
+# ✅ Funciona!
+```
+
+#### Resolvers Alternativos
+
+```nginx
+# Google Public DNS
+resolver 8.8.8.8 8.8.4.4 valid=300s;
+
+# Cloudflare DNS
+resolver 1.1.1.1 1.0.0.1 valid=300s;
+
+# DNS local + fallback
+resolver 127.0.0.11 8.8.8.8 valid=30s;
+
+# IPv6
+resolver [2001:4860:4860::8888] valid=300s;
+```
+
+---
 
 ### include mime.types
 
@@ -1460,9 +1571,11 @@ location ~ /\.well-known {
 
 ```nginx
 location /myprofile/ {
-    set $_myprofile "myprofile:8888";
-    proxy_pass http://$_myprofile;
+    set $_myprofile_proxy "myprofile:8888";
+    rewrite ^/myprofile/(.*) /$1 break;
+    proxy_pass http://$_myprofile_proxy;
     proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -1471,14 +1584,14 @@ location /myprofile/ {
 }
 ```
 
-#### set $_myprofile
+#### set $_myprofile_proxy
 
 ```nginx
-set $_myprofile "myprofile:8888";
+set $_myprofile_proxy "myprofile:8888";
 ```
 
 **Explicação:**
-- Define variável `$_myprofile` com endereço do backend
+- Define variável `$_myprofile_proxy` com endereço do backend
 - **Sintaxe:** `set $variavel "valor";`
 - **Escopo:** Válida apenas neste location block
 - **Uso:** Permite configuração dinâmica
@@ -1489,13 +1602,170 @@ set $_myprofile "myprofile:8888";
 proxy_pass http://myprofile:8888;
 
 # ✅ Com variável
-set $_myprofile "myprofile:8888";
-proxy_pass http://$_myprofile;
+set $_myprofile_proxy "myprofile:8888";
+proxy_pass http://$_myprofile_proxy;
 ```
 
 - **Manutenibilidade:** Fácil alterar endereço
 - **Legibilidade:** Nome descritivo
 - **Reutilização:** Mesmo padrão para múltiplos backends
+
+#### rewrite
+
+```nginx
+rewrite ^/myprofile/(.*) /$1 break;
+```
+
+**Explicação:**
+- **Função:** Remove prefixo `/myprofile/` do URI antes de enviar ao backend
+- **Regex:** `^/myprofile/(.*)` - Captura tudo após `/myprofile/`
+- **Substituição:** `/$1` - Mantém apenas a parte capturada
+- **Flag:** `break` - Para processamento de rewrites
+
+**Por que necessário?**
+
+```
+Servidor myprofile espera arquivos na raiz:
+  /                  → index.html
+  /styles.css        → styles.css
+  /script.js         → script.js
+```
+
+**Sem rewrite:**
+```
+Cliente: https://nmatondo.42.fr/myprofile/styles.css
+           ↓
+NGINX: proxy_pass http://myprofile:8888
+           ↓
+Backend recebe: /myprofile/styles.css
+           ↓
+Backend procura: /var/www/myprofile/myprofile/styles.css
+           ↓
+❌ 404 Not Found (caminho incorreto!)
+```
+
+**Com rewrite:**
+```
+Cliente: https://nmatondo.42.fr/myprofile/styles.css
+           ↓
+NGINX: rewrite ^/myprofile/(.*) /$1 break;
+       /myprofile/styles.css → /styles.css
+           ↓
+proxy_pass http://myprofile:8888
+           ↓
+Backend recebe: /styles.css
+           ↓
+Backend procura: /var/www/myprofile/styles.css
+           ↓
+✅ 200 OK (arquivo encontrado!)
+```
+
+**Regex Breakdown:**
+```
+^/myprofile/(.*)
+│ │         │
+│ │         └─ Captura grupo 1: tudo após /myprofile/
+│ └──────────── Literal "/myprofile/"
+└────────────── Início da string
+
+/$1
+│ │
+│ └─ Substitui por conteúdo do grupo 1
+└─── Adiciona / no início
+```
+
+**Exemplos:**
+
+| URL Original | Após Rewrite |
+|--------------|--------------|
+| `/myprofile/` | `/` |
+| `/myprofile/index.html` | `/index.html` |
+| `/myprofile/styles.css` | `/styles.css` |
+| `/myprofile/js/script.js` | `/js/script.js` |
+| `/myprofile/api/users` | `/api/users` |
+
+**Flag break:**
+- Para processamento de rewrite rules
+- Continua com proxy_pass
+- Não testa outras location blocks
+
+**Flags alternativos:**
+
+| Flag | Comportamento |
+|------|---------------|
+| `break` | Para rewrites, continua no location atual |
+| `last` | Para rewrites, refaz location matching |
+| `redirect` | Retorna 302 redirect temporário |
+| `permanent` | Retorna 301 redirect permanente |
+
+**Ordem importa:**
+```nginx
+# ✅ CORRETO
+set $_myprofile_proxy "myprofile:8888";
+rewrite ^/myprofile/(.*) /$1 break;
+proxy_pass http://$_myprofile_proxy;
+
+# ❌ ERRO - rewrite antes de set pode causar problemas
+rewrite ^/myprofile/(.*) /$1 break;
+set $_myprofile_proxy "myprofile:8888";
+proxy_pass http://$_myprofile_proxy;
+```
+
+#### proxy_pass (com rewrite)
+
+```nginx
+proxy_pass http://$_myprofile_proxy;
+```
+
+**Importante:** Sem barra final!
+
+**Com rewrite:**
+```nginx
+rewrite ^/myprofile/(.*) /$1 break;
+proxy_pass http://$_myprofile_proxy;  # Sem /
+# ✅ Correto - URI já foi reescrito
+```
+
+**Sem rewrite (alternativa):**
+```nginx
+proxy_pass http://$_myprofile_proxy/;  # Com /
+# Remove prefixo /myprofile/ automaticamente
+# MAS não funciona bem com variáveis!
+```
+
+**Diferença sutil:**
+
+| Configuração | Resultado |
+|--------------|-----------|
+| `proxy_pass http://backend;` | Envia URI completo |
+| `proxy_pass http://backend/;` | Remove prefixo da location |
+| `rewrite + proxy_pass (sem /)` | Envia URI reescrito |
+
+#### proxy_set_header X-Forwarded-Host
+
+```nginx
+proxy_set_header X-Forwarded-Host $host;
+```
+
+**Novo header adicionado:**
+- **Função:** Preserva hostname original através de múltiplos proxies
+- **Valor:** `$host` (mesmo que header `Host`)
+- **Uso:** Aplicações que precisam saber domínio original
+
+**Diferença Host vs X-Forwarded-Host:**
+
+```
+Cliente → Proxy1 → Proxy2 → NGINX → Backend
+
+Host: nmatondo.42.fr (sempre atual)
+X-Forwarded-Host: nmatondo.42.fr (original preservado)
+```
+
+**Backend pode usar:**
+```php
+// Hostname original (mesmo após múltiplos proxies)
+$original_host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'];
+```
 
 #### error_page
 
@@ -1536,8 +1806,12 @@ URL externa: https://nmatondo.42.fr/myprofile/about.html
               ↓
         NGINX location /myprofile/
               ↓
-    set $_myprofile "myprofile:8888"
-    proxy_pass http://$_myprofile
+    set $_myprofile_proxy "myprofile:8888"
+              ↓
+    rewrite ^/myprofile/(.*) /$1 break
+    /myprofile/about.html → /about.html
+              ↓
+    proxy_pass http://$_myprofile_proxy
               ↓
 URL interna: http://myprofile:8888/about.html
               ↓
@@ -1730,9 +2004,11 @@ if ($is_https) {
 
 ```nginx
 location /adminer/ {
-    set $_adminer "adminer:8080";
-    proxy_pass http://$_adminer;
+    set $_adminer_proxy "adminer:8080";
+    rewrite ^/adminer/(.*) /$1 break;
+    proxy_pass http://$_adminer_proxy;
     proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -1741,14 +2017,14 @@ location /adminer/ {
 }
 ```
 
-#### set $_adminer
+#### set $_adminer_proxy
 
 ```nginx
-set $_adminer "adminer:8080";
+set $_adminer_proxy "adminer:8080";
 ```
 
 **Explicação:**
-- Define variável `$_adminer` com endereço do backend
+- Define variável `$_adminer_proxy` com endereço do backend
 - **Sintaxe:** `set $variavel "valor";`
 - **Escopo:** Válida apenas neste location block
 - **Uso:** Permite configuração dinâmica
@@ -1759,13 +2035,39 @@ set $_adminer "adminer:8080";
 proxy_pass http://adminer:8080;
 
 # ✅ Com variável
-set $_adminer "adminer:8080";
-proxy_pass http://$_adminer;
+set $_adminer_proxy "adminer:8080";
+proxy_pass http://$_adminer_proxy;
 ```
 
 - **Manutenibilidade:** Fácil alterar endereço
 - **Legibilidade:** Nome descritivo
 - **Reutilização:** Mesmo padrão para múltiplos backends
+
+#### rewrite (Adminer)
+
+```nginx
+rewrite ^/adminer/(.*) /$1 break;
+```
+
+**Funcionamento idêntico ao /myprofile/:**
+
+```
+Cliente: https://nmatondo.42.fr/adminer/
+           ↓
+rewrite: /adminer/ → /
+           ↓
+Backend recebe: /
+           ↓
+✅ Adminer index.php é servido
+```
+
+**Recursos estáticos do Adminer:**
+```
+/adminer/?file=default.css → /?file=default.css
+/adminer/?file=functions.js → /?file=functions.js
+```
+
+Adminer usa query strings para recursos, então o rewrite preserva corretamente os parâmetros.
 
 #### error_page
 
@@ -1799,6 +2101,32 @@ Backend down → Cliente vê erro feio do NGINX
 ```
 Backend down → Cliente vê página customizada
 ```
+
+#### rewrite (Adminer)
+
+```nginx
+rewrite ^/adminer/(.*) /$1 break;
+```
+
+**Funcionamento idêntico ao /myprofile/:**
+
+```
+Cliente: https://nmatondo.42.fr/adminer/
+           ↓
+rewrite: /adminer/ → /
+           ↓
+Backend recebe: /
+           ↓
+✅ Adminer index.php é servido
+```
+
+**Recursos estáticos do Adminer:**
+```
+/adminer/?file=default.css → /?file=default.css
+/adminer/?file=functions.js → /?file=functions.js
+```
+
+Adminer usa query strings para recursos, então o rewrite preserva corretamente os parâmetros.
 
 ---
 
