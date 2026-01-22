@@ -2,238 +2,466 @@
 
 # Inception
 
-## Descrição
+## 🎯 Descrição
 
-Inception é um projeto de administração de sistemas que se concentra em containerização usando Docker. O objetivo é criar uma pequena infraestrutura composta por diferentes serviços, cada um rodando em seu próprio container dedicado. O projeto envolve a configuração de uma aplicação Docker multi-container usando Docker Compose, com ênfase em segurança, networking e persistência de dados.
+Inception é um projeto abrangente de administração de sistemas que demonstra técnicas avançadas de containerização usando Docker. O projeto cria uma infraestrutura completa pronta para produção com múltiplos serviços isolados, cada um executando em seu próprio container dedicado, orquestrados através do Docker Compose.
 
-A infraestrutura inclui:
-- **NGINX** com TLSv1.2 ou TLSv1.3 como único ponto de entrada
-- **WordPress** com PHP-FPM para gestão de conteúdo
-- **MariaDB** como servidor de base de dados
-- **Redis** cache para otimização do WordPress
-- **Servidor FTP** para gestão de ficheiros
-- **Adminer** para administração de base de dados
-- **Elasticsearch** para capacidades de pesquisa
-- **Website estático** (página de perfil pessoal)
+### Características Principais
 
-Todos os serviços são construídos a partir de versões estáveis penúltimas usando Alpine ou Debian (penúltima estável) como imagens base, com Dockerfiles personalizados e sem imagens pré-construídas do Docker Hub (exceto para imagens base do SO).
+- **Infraestrutura Completa como Código**: Todos os serviços definidos em configuração declarativa
+- **Design Focado em Segurança**: Criptografia TLS, gestão de secrets e rede isolada
+- **Persistência de Dados**: Gestão de volumes com bind mounts ao sistema de arquivos do host
+- **Monitoramento de Saúde dos Serviços**: Health checks para serviços críticos
+- **Arquitetura Escalável**: Design modular permitindo fácil adição de serviços
+
+### 🏗️ Componentes da Infraestrutura
+
+#### Serviços Obrigatórios
+
+| Serviço | Tecnologia | Propósito | Porta |
+|---------|-----------|-----------|-------|
+| **NGINX** | Alpine 3.23 + NGINX | Proxy reverso com TLS 1.2/1.3 | 443 |
+| **WordPress** | Alpine 3.23 + PHP-FPM | Sistema de Gestão de Conteúdo | 9000 (interna) |
+| **MariaDB** | Alpine 3.23 + MariaDB | Base de dados relacional | 3306 (interna) |
+
+#### Serviços Bônus
+
+| Serviço | Tecnologia | Propósito | Porta |
+|---------|-----------|-----------|-------|
+| **Redis** | Alpine 3.23 + Redis | Cache em memória para WordPress | 6379 (interna) |
+| **FTP** | Alpine 3.23 + vsftpd | Servidor de transferência de arquivos | 21, 21000-21010 |
+| **Adminer** | Alpine 3.23 + PHP | Interface de gestão de base de dados | 8080 |
+| **Elasticsearch** | Alpine 3.23 + ES | Motor de busca e análise | 9200, 9300 |
+| **MyProfile** | Alpine 3.23 + httpd | Website estático pessoal | 8888 |
+
+Todos os serviços são construídos a partir do **Alpine Linux 3.23** usando Dockerfiles personalizados sem imagens de aplicação pré-construídas do Docker Hub.
 
 ---
 
-## Instruções
+## 📋 Pré-requisitos
 
-### Pré-requisitos
+Antes de começar, certifique-se de ter o seguinte instalado:
 
-- Docker Engine
-- Docker Compose
-- Make
-- Um nome de domínio configurado para apontar para a sua máquina local (ex: `nmatondo.42.fr` apontando para `127.0.0.1` em `/etc/hosts`)
+- **Docker Engine** 20.10+ ([Guia de Instalação](https://docs.docker.com/engine/install/))
+- **Docker Compose** 2.0+ (incluído com Docker Desktop)
+- **GNU Make** 4.0+
+- **Git** 2.0+
 
-### Instalação
+**Requisitos do Sistema:**
+- RAM: 4GB mínimo (8GB recomendado)
+- Espaço em Disco: 10GB livres
+- SO: Linux, macOS, ou Windows com WSL2
 
-1. **Clonar o repositório:**
-   ```bash
-   git clone <repository-url>
-   cd Inception
-   ```
+**Verificar Instalação:**
+```bash
+docker --version          # Deve mostrar 20.10+
+docker compose version    # Deve mostrar v2.0+
+make --version           # Deve mostrar 4.0+
+```
 
-2. **Configurar variáveis de ambiente:**
-   
-   Criar um ficheiro `.env` no diretório `srcs/` com as seguintes variáveis:
-   ```env
-   DOMAIN_NAME=nmatondo.42.fr
-   CERT_=./requirements/nginx/tools/nmatondo.42.fr.crt
-   KEY_=./requirements/nginx/tools/nmatondo.42.fr.key
-   DB_NAME=wordpress
-   DB_USER=wpuser
-   DB_HOST=mariadb
-   FTP_USER=ftpuser
-   REDIS_HOST=redis:6379
-   WP_TITLE=Inception
-   WP_URL=https://nmatondo.42.fr
-   WP_ADMIN_USER=admin
-   WP_ADMIN_EMAIL=admin@nmatondo.42.fr
-   WP_USER=user
-   WP_USER_EMAIL=user@nmatondo.42.fr
-   ```
+---
 
-3. **Configurar secrets:**
-   
-   Criar os seguintes ficheiros de secrets no diretório `secrets/`:
-   - `db_root_password.txt` - Password root do MariaDB
-   - `db_password.txt` - Password do utilizador da base de dados WordPress
-   - `credentials.txt` - Credenciais de admin do WordPress (formato: `username:password`)
-   - `redis_password.txt` - Password de autenticação do Redis
-   - `ftp_password.txt` - Password do utilizador FTP
+## 🚀 Instalação
 
-### Compilação e Execução
+### 1. Clonar o Repositório
 
-#### Parte Obrigatória
+```bash
+git clone <repository-url>
+cd Inception
+```
 
-Construir e iniciar os serviços obrigatórios (NGINX, WordPress, MariaDB):
+### 2. Configurar Nome de Domínio
+
+Adicione o domínio ao seu arquivo hosts:
+
+**Linux/Mac:**
+```bash
+sudo nano /etc/hosts
+# Adicione esta linha:
+127.0.0.1    nmatondo.42.fr
+```
+
+**Windows (WSL2):**
+```powershell
+# Edite C:\Windows\System32\drivers\etc\hosts como Administrador
+127.0.0.1    nmatondo.42.fr
+```
+
+### 3. Configurar Variáveis de Ambiente
+
+Crie o arquivo `srcs/.env`:
+
+```env
+# Configuração de Domínio
+DOMAIN_NAME=nmatondo.42.fr
+CERT_=./requirements/nginx/tools/nmatondo.42.fr.crt
+KEY_=./requirements/nginx/tools/nmatondo.42.fr.key
+
+# Configuração de Base de Dados
+DB_NAME=wordpress
+DB_USER=wpuser
+DB_HOST=mariadb
+
+# Configuração WordPress
+WP_TITLE=Inception
+WP_URL=https://nmatondo.42.fr
+WP_ADMIN_USER=admin
+WP_ADMIN_EMAIL=admin@nmatondo.42.fr
+WP_USER=user
+WP_USER_EMAIL=user@nmatondo.42.fr
+
+# Configuração FTP
+FTP_USER=ftpuser
+
+# Configuração Redis
+REDIS_HOST=redis:6379
+```
+
+### 4. Configurar Secrets
+
+Crie o diretório `secrets/` e popule com arquivos de senha:
+
+```bash
+mkdir -p secrets
+
+# Crie arquivos de secrets (substitua com suas senhas seguras)
+echo "sua_senha_root_forte" > secrets/db_root_password.txt
+echo "sua_senha_db" > secrets/db_password.txt
+echo "admin:sua_senha_admin" > secrets/credentials.txt
+echo "sua_senha_redis" > secrets/redis_password.txt
+echo "ftpuser:sua_senha_ftp" > secrets/ftp_credentials.txt
+
+# Proteja os secrets
+chmod 600 secrets/*.txt
+```
+
+### 5. Criar Diretórios de Dados
+
+```bash
+mkdir -p /home/nmatondo/data/{mariadb,wordpress,redis,elasticsearch}
+```
+
+---
+
+## 🎮 Uso
+
+### Início Rápido
+
+**Iniciar apenas serviços obrigatórios (NGINX, WordPress, MariaDB):**
 ```bash
 make
 ```
 
-Ou passo a passo:
-```bash
-make build    # Construir imagens Docker
-make up       # Iniciar containers
-```
-
-#### Serviços Bónus
-
-Construir e iniciar todos os serviços incluindo os bónus:
+**Iniciar todos os serviços incluindo bônus:**
 ```bash
 make bonus
 ```
 
-#### Outros Comandos
+### Comandos Disponíveis
 
-```bash
-make down      # Parar todos os containers
-make clean     # Parar containers e remover volumes
-make fclean    # Limpeza completa (containers, imagens, volumes, redes)
-make logs      # Ver logs dos containers
-make restart   # Reiniciar todos os containers
-make status    # Ver status dos containers
-make re        # Reconstruir tudo do zero
-```
+| Comando | Descrição |
+|---------|-----------|
+| `make` ou `make all` | Construir e iniciar serviços obrigatórios |
+| `make bonus` | Construir e iniciar todos os serviços (incluindo bônus) |
+| `make build` | Construir apenas imagens Docker |
+| `make up` | Iniciar containers |
+| `make down` | Parar containers (preserva dados) |
+| `make clean` | Parar containers e remover volumes |
+| `make fclean` | Limpeza completa (containers, imagens, volumes) |
+| `make logs` | Ver logs dos containers (modo follow) |
+| `make restart` | Reiniciar todos os containers |
+| `make status` | Mostrar status dos containers |
+| `make re` | Reconstruir serviços obrigatórios do zero |
+| `make bre` | Reconstruir serviços bônus do zero |
 
-### Aceder aos Serviços
+### Pontos de Acesso
 
-Uma vez em execução, aceder aos serviços em:
-- **WordPress:** https://nmatondo.42.fr
-- **Adminer:** https://nmatondo.42.fr:8080
-- **Servidor FTP:** ftp://nmatondo.42.fr:21
-- **Website Estático:** https://nmatondo.42.fr/myprofile
+Após iniciar os serviços, acesse-os via:
+
+| Serviço | URL | Credenciais |
+|---------|-----|-------------|
+| **WordPress** | https://nmatondo.42.fr | Admin de secrets/credentials.txt |
+| **Adminer** | http://nmatondo.42.fr:8080 | Credenciais DB de .env |
+| **MyProfile** | https://nmatondo.42.fr/myprofile/ | Nenhuma (site estático) |
+| **FTP** | ftp://nmatondo.42.fr:21 | Credenciais FTP de secrets |
+| **Elasticsearch** | http://nmatondo.42.fr:9200 | Nenhuma |
 
 ---
 
-## Descrição do Projeto
+## 🏛️ Arquitetura
+
+### Arquitetura de Rede
+
+```
+Internet
+    │
+    ↓
+[NGINX:443] ← Ponto de Entrada TLS/HTTPS
+    │
+    ├─→ [WordPress:9000] ← PHP-FPM
+    │        │
+    │        ├─→ [MariaDB:3306] ← Base de Dados
+    │        ├─→ [Redis:6379] ← Cache
+    │        └─→ [Elasticsearch:9200] ← Busca
+    │
+    ├─→ [Adminer:8080] ← Gestão de BD
+    ├─→ [FTP:21] ← Gestão de Arquivos
+    └─→ [MyProfile:8888] ← Site Estático
+```
+
+### Persistência de Dados
+
+Todos os dados dos serviços são persistidos usando volumes Docker com bind mounts para `/home/nmatondo/data/`:
+
+- `mariadb_data` → Arquivos da base de dados
+- `wordpress_data` → Arquivos WordPress e uploads
+- `redis_data` → Persistência Redis
+- `elasticsearch_data` → Índices Elasticsearch
+- `myprofile_data` → Arquivos do website estático
+
+### Gestão de Secrets
+
+Dados sensíveis são geridos usando Docker secrets, armazenados no diretório `secrets/` e montados de forma segura nos containers em `/run/secrets/`.
+
+---
+
+## 🔧 Desenvolvimento
+
+Para documentação detalhada de desenvolvimento, consulte [DEV_DOC.pt.md](DEV_DOC.pt.md).
+
+### Estrutura do Projeto
+
+```
+Inception/
+├── Makefile              # Automação de build
+├── README.md            # Arquivo principal (inglês)
+├── DEV_DOC.md          # Documentação do desenvolvedor
+├── USER_DOC.md         # Guia do usuário
+├── secrets/            # Credenciais sensíveis
+├── srcs/
+│   ├── .env            # Variáveis de ambiente
+│   ├── docker-compose.yml  # Orquestração de serviços
+│   └── requirements/   # Configurações dos serviços
+│       ├── nginx/      # Servidor web
+│       ├── wordpress/  # CMS
+│       ├── mariadb/    # Base de dados
+│       └── bonus/      # Serviços adicionais
+└── docs/              # Documentação adicional
+```
+
+### Construir Serviços Individuais
+
+```bash
+# Construir serviço específico
+docker compose -f srcs/docker-compose.yml build <nome-do-serviço>
+
+# Exemplo: Construir apenas NGINX
+docker compose -f srcs/docker-compose.yml build nginx
+```
+
+### Depuração
+
+```bash
+# Ver logs de todos os serviços
+make logs
+
+# Ver logs de serviço específico
+docker compose -f srcs/docker-compose.yml logs -f mariadb
+
+# Executar comandos dentro de um container
+docker exec -it <nome-do-container> sh
+
+# Verificar status dos containers
+docker ps -a
+```
+
+---
+
+## 📚 Documentação
+
+- [DEV_DOC.pt.md](DEV_DOC.pt.md) - Documentação completa do desenvolvedor
+- [USER_DOC.pt.md](USER_DOC.pt.md) - Guia do usuário e documentação de serviços
+- [docs/](../docs/) - Guias de configuração específicos por serviço
+
+### Documentação Específica por Serviço
+
+- [NGINX_CONFIG.md](NGINX_CONFIG.md) - Detalhes de configuração NGINX
+- [WORDPRESS_CONFIG.md](WORDPRESS_CONFIG.md) - Configuração WordPress
+- [MARIADB_CONFIG.md](MARIADB_CONFIG.md) - Configuração da base de dados
+- [REDIS_CONFIG.md](REDIS_CONFIG.md) - Configuração do cache Redis
+- [FTP_CONFIG.md](FTP_CONFIG.md) - Configuração do servidor FTP
+- [ELASTICSEARCH_CONFIG.md](ELASTICSEARCH_CONFIG.md) - Configuração Elasticsearch
+
+---
+
+## 🔒 Funcionalidades de Segurança
+
+- **Criptografia TLS**: Todo o tráfego HTTP redirecionado para HTTPS com TLS 1.2/1.3
+- **Gestão de Secrets**: Senhas e dados sensíveis armazenados como Docker secrets
+- **Isolamento de Rede**: Serviços comunicam através de rede Docker privada
+- **Superfície de Ataque Mínima**: Imagens base Alpine Linux (tamanho mínimo)
+- **Health Checks**: Monitoramento automatizado de saúde dos serviços
+- **Sem Processos Root**: Serviços executam como usuários não privilegiados quando possível
+
+---
+
+## 🐛 Resolução de Problemas
+
+### Problemas Comuns
+
+**Problema: Porta já em uso**
+```bash
+# Encontrar e matar processo usando porta 443
+sudo lsof -i :443
+sudo kill -9 <PID>
+```
+
+**Problema: Containers não iniciam**
+```bash
+# Verificar logs
+make logs
+
+# Verificar se secrets existem
+ls -la secrets/
+
+# Verificar arquivo de ambiente
+cat srcs/.env
+```
+
+**Problema: Não consigo aceder aos serviços**
+```bash
+# Verificar domínio no arquivo hosts
+cat /etc/hosts | grep nmatondo.42.fr
+
+# Verificar status dos containers
+docker ps
+
+# Testar conectividade
+curl -k https://nmatondo.42.fr
+```
+
+**Problema: Erros de conexão à base de dados**
+```bash
+# Verificar saúde do MariaDB
+docker exec -it mariadb mysql -u root -p
+
+# Verificar se WordPress consegue conectar
+docker exec -it wordpress ping mariadb
+```
+
+---
+
+## 📝 Licença
+
+Este projeto faz parte do currículo da Escola 42 e destina-se a fins educacionais.
+
+---
+
+## 👤 Autor
+
+**nmatondo**
+- 42 Intra: nmatondo
+- Projeto: Inception
+
+---
+
+## 🙏 Agradecimentos
+
+- Escola 42 pelo enunciado do projeto
+- Documentação Docker
+- Comunidade Alpine Linux
+- WordPress, NGINX, MariaDB e outros projetos open-source utilizados
+
+---
+
+## 📞 Suporte
+
+Para problemas e questões:
+1. Consulte [USER_DOC.pt.md](USER_DOC.pt.md) para guias do usuário
+2. Reveja [DEV_DOC.pt.md](DEV_DOC.pt.md) para detalhes técnicos
+3. Consulte documentação específica por serviço em [docs/](../docs/)
+4. Verifique logs dos containers: `make logs`
+
+---
+
+## 🔍 Análise Técnica Aprofundada
 
 ### Arquitetura Docker
 
-Este projeto utiliza a containerização **Docker** para criar uma infraestrutura isolada, reproduzível e portável. Cada serviço executa no seu próprio container, garantindo:
+Este projeto aproveita a containerização **Docker** para criar uma infraestrutura isolada, reproduzível e portável. Cada serviço executa em seu próprio container, garantindo:
 
-1. **Isolamento:** Os serviços estão separados uns dos outros e do sistema host
+1. **Isolamento:** Serviços separados entre si e do sistema host
 2. **Reprodutibilidade:** O mesmo ambiente pode ser recriado em qualquer lugar
-3. **Eficiência de Recursos:** Os containers partilham o kernel do SO host
-4. **Escalabilidade:** Os serviços podem ser escalados independentemente
+3. **Eficiência de Recursos:** Containers partilham o kernel do SO host
+4. **Escalabilidade:** Serviços podem ser escalados independentemente
 
-### Principais Escolhas de Design
+### Princípios de Design
 
 #### Dockerfiles Personalizados
 Todos os containers são construídos a partir de Dockerfiles personalizados (sem imagens pré-construídas do Docker Hub exceto SO base). Isto proporciona:
 - Controlo total sobre o processo de build
 - Compreensão das dependências de cada serviço
-- Segurança através de imagens base mínimas (Alpine/Debian)
+- Segurança através de imagens base mínimas (Alpine Linux 3.23)
 - Otimização para casos de uso específicos
 
-#### Multi-Stage Builds
-Quando aplicável, builds multi-estágio reduzem o tamanho da imagem final ao excluir dependências de build.
-
 #### Health Checks
-Os serviços incluem health checks para garantir ordem de arranque adequada e recuperação automática:
+Serviços críticos incluem health checks para garantir ordem de inicialização adequada e recuperação automática:
 ```yaml
 healthcheck:
-  test: ["CMD-SHELL", "mariadb -u root -p... -e 'SELECT 1'"]
+  test: ["CMD-SHELL", "mariadb -u root -p$$(cat /run/secrets/db_root_password) -e 'SELECT 1'"]
   interval: 10s
   timeout: 5s
   retries: 5
 ```
 
 #### Solução do Problema PID 1
-Cada container usa `exec` nos scripts entrypoint para garantir que o processo principal execute como PID 1, permitindo o tratamento adequado de sinais para desligamentos graciosos.
-
-#### Segurança em Primeiro Lugar
-- Sem passwords em Dockerfiles ou ficheiros de ambiente
-- Docker secrets para dados sensíveis
-- Encriptação TLS/SSL para NGINX
-- Utilizadores não-root sempre que possível
-- Sistemas de ficheiros read-only quando aplicável
+Cada container usa `exec` nos scripts de entrypoint para garantir que o processo principal execute como PID 1, permitindo manipulação adequada de sinais para desligamentos graciosos.
 
 ---
 
-## Comparações Técnicas
+## 📊 Comparações Técnicas
 
-### Máquinas Virtuais vs Docker
+### Máquinas Virtuais vs Containers Docker
 
-| Aspeto | Máquinas Virtuais | Containers Docker |
-|--------|------------------|-------------------|
+| Aspecto | Máquinas Virtuais | Containers Docker |
+|---------|------------------|-------------------|
 | **Arquitetura** | SO completo com hypervisor | Partilha kernel do SO host |
 | **Tamanho** | GBs (inclui SO completo) | MBs (apenas app + dependências) |
-| **Tempo de Arranque** | Minutos | Segundos |
-| **Uso de Recursos** | Alto (cada VM tem recursos dedicados) | Baixo (kernel partilhado, processos isolados) |
-| **Isolamento** | Completo (nível de hardware) | Nível de processo (isolamento namespace) |
-| **Portabilidade** | Limitada (dependente do hypervisor) | Alta (executa em qualquer lugar com Docker) |
-| **Performance** | Overhead da virtualização | Performance quase nativa |
-| **Caso de Uso** | Executar SO diferentes, isolamento completo | Microserviços, deployment rápido |
+| **Tempo de Inicialização** | Minutos | Segundos |
+| **Uso de Recursos** | Alto (recursos dedicados) | Baixo (kernel partilhado) |
+| **Isolamento** | Completo (nível de hardware) | Nível de processo (namespaces) |
+| **Portabilidade** | Limitada (dependente de hypervisor) | Alta (executa em qualquer lugar) |
+| **Performance** | Overhead de virtualização | Performance quase nativa |
 
-**Porquê Docker para Inception:**
-- Leve e arranque rápido
-- Fácil de versionar (Dockerfiles)
-- Utilização eficiente de recursos
-- Perfeito para arquitetura de microserviços
-- Padrão da indústria para desenvolvimento e deployment
+**Por que Docker para Inception:** Leve, inicialização rápida, fácil controlo de versão, utilização eficiente de recursos e padrão da indústria para microserviços.
 
-### Secrets vs Variáveis de Ambiente
+### Docker Secrets vs Variáveis de Ambiente
 
-| Aspeto | Docker Secrets | Variáveis de Ambiente |
-|--------|----------------|----------------------|
-| **Segurança** | Encriptados em repouso e em trânsito | Texto plano, visível no inspect do container |
+| Aspecto | Docker Secrets | Variáveis de Ambiente |
+|---------|----------------|----------------------|
+| **Segurança** | Encriptado em repouso e em trânsito | Texto simples, visível em logs |
 | **Armazenamento** | `/run/secrets/` (tmpfs - RAM) | Ambiente do processo |
-| **Visibilidade** | Apenas acessível aos serviços especificados | Visível em logs, listas de processos |
-| **Rotação** | Pode ser atualizado sem rebuild | Requer reinício do container |
-| **Melhor Para** | Passwords, chaves API, certificados | Configuração, dados não sensíveis |
+| **Visibilidade** | Apenas acessível a serviços especificados | Visível em todo o lado |
+| **Rotação** | Pode ser atualizado sem reconstruir | Requer reinício do container |
+| **Melhor Para** | Senhas, chaves API, certificados | Configuração, dados não sensíveis |
 
 **Implementação no Inception:**
 ```yaml
 secrets:
-  - db_root_password
-  - db_password
-
-secrets:
   db_password:
     file: ../secrets/db_password.txt
 ```
+Secrets são armazenados em RAM (`tmpfs`) e nunca escritos em disco, proporcionando segurança superior.
 
-Os secrets são armazenados em RAM (`tmpfs`) e nunca escritos em disco, proporcionando segurança superior para credenciais sensíveis.
+### Docker Volumes vs Bind Mounts
 
-### Rede Docker vs Rede Host
-
-| Aspeto | Rede Docker (Bridge) | Rede Host |
-|--------|---------------------|-----------|
-| **Isolamento** | Isolamento de namespace de rede | Partilha stack de rede do host |
-| **Mapeamento de Portas** | Necessário (ex: `8080:80`) | Acesso direto às portas do host |
-| **Segurança** | Melhor (isolado, regras de firewall) | Menor (exposição direta do host) |
-| **Performance** | Ligeiro overhead (NAT) | Sem overhead |
-| **DNS** | Descoberta de serviços integrada | Configuração manual |
-| **Caso de Uso** | Apps multi-container | Networking de alta performance |
-
-**Porquê Rede Docker para Inception:**
-```yaml
-networks:
-  network:
-    driver: bridge
-```
-- Descoberta de serviços por nome (ex: `mariadb:3306`)
-- Isolamento da rede host
-- Exposição controlada de portas
-- Melhor postura de segurança
-- Comunicação container-to-container mais simples
-
-### Volumes Docker vs Bind Mounts
-
-| Aspeto | Volumes Docker | Bind Mounts |
-|--------|----------------|-------------|
-| **Gestão** | Gerido pelo Docker | Utilizador gere o caminho do host |
+| Aspecto | Docker Volumes | Bind Mounts |
+|---------|----------------|-------------|
+| **Gestão** | Gerido pelo Docker | Utilizador gere caminho do host |
 | **Localização** | Área de armazenamento Docker | Qualquer caminho do host |
 | **Portabilidade** | Portável entre hosts | Dependente do caminho do host |
-| **Performance** | Otimizado pelo Docker | Acesso direto ao sistema de ficheiros |
-| **Backup** | Comandos de volume Docker | Ferramentas standard do sistema de ficheiros |
-| **Permissões** | Docker trata | Aplicam-se permissões do host |
-| **Caso de Uso** | Persistência de dados em produção | Desenvolvimento, partilha de ficheiros do host |
+| **Performance** | Otimizado pelo Docker | Acesso direto ao sistema de arquivos |
+| **Caso de Uso** | Persistência de dados de produção | Desenvolvimento, partilha de arquivos do host |
 
 **Implementação no Inception:**
 ```yaml
@@ -244,108 +472,58 @@ volumes:
       type: none
       o: bind
       device: /home/nmatondo/data/wordpress
-
-volumes:
-  - wordpress_data:/var/www/html
 ```
-
-**Porquê Volumes:**
-- Os dados persistem após remoção do container
-- Podem ser partilhados entre containers
-- Geridos pelo Docker (backup, migração)
-- Desacoplados da estrutura do sistema de ficheiros do host
-- Melhor para ambientes de produção
+Esta abordagem combina gestão de volumes Docker com acesso direto ao caminho do host para persistência de dados.
 
 ---
 
-## Recursos
+## 📚 Recursos
 
 ### Documentação Docker
 - [Documentação Oficial Docker](https://docs.docker.com/)
 - [Documentação Docker Compose](https://docs.docker.com/compose/)
-- [Boas Práticas Dockerfile](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [Melhores Práticas Dockerfile](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
 - [Segurança Docker](https://docs.docker.com/engine/security/)
-- [Networking Docker](https://docs.docker.com/network/)
+- [Redes Docker](https://docs.docker.com/network/)
 
-### Recursos Específicos de Serviços
+### Recursos Específicos por Serviço
 - [Documentação NGINX](https://nginx.org/en/docs/)
 - [Documentação MariaDB](https://mariadb.com/kb/en/)
-- [Recursos para Programadores WordPress](https://developer.wordpress.org/)
+- [Recursos para Desenvolvedores WordPress](https://developer.wordpress.org/)
 - [Configuração PHP-FPM](https://www.php.net/manual/en/install.fpm.php)
 - [Documentação Redis](https://redis.io/documentation)
 - [Documentação vsftpd](https://security.appspot.com/vsftpd.html)
 
-### Tutoriais e Guias
-- [Docker para Iniciantes](https://docker-curriculum.com/)
-- [Compreender Volumes Docker](https://docs.docker.com/storage/volumes/)
-- [SSL/TLS com NGINX](https://nginx.org/en/docs/http/configuring_https_servers.html)
+---
 
-### Uso de IA
+## 🤖 Declaração de Uso de IA
 
 A assistência de IA foi utilizada nos seguintes aspetos deste projeto:
 
-1. **Documentação e Pesquisa:**
-   - Compreensão de conceitos de networking Docker
-   - Pesquisa de boas práticas para Dockerfiles
-   - Aprendizagem sobre implementação de Docker secrets
-   - Comparação de tecnologias de virtualização
+**1. Documentação e Pesquisa:**
+- Compreensão de conceitos de redes Docker
+- Pesquisa de melhores práticas para Dockerfiles
+- Aprendizagem da implementação de Docker secrets
 
-2. **Resolução de Problemas:**
-   - Debug de problemas de arranque de containers
-   - Resolução de problemas de dependências
-   - Problemas de conectividade de rede entre containers
-   - Problemas de permissões com volumes
+**2. Resolução de Problemas:**
+- Depuração de problemas de inicialização de containers
+- Resolução de problemas de conectividade de rede
+- Correção de problemas de permissões de volumes
 
-3. **Otimização de Configuração:**
-   - Configuração NGINX para reverse proxy
-   - Configuração de pool PHP-FPM
-   - Afinação de performance do MariaDB
-   - Otimização de cache Redis
+**3. Otimização de Configuração:**
+- Configuração de proxy reverso NGINX
+- Otimização de pool PHP-FPM
+- Ajuste de performance MariaDB
+- Configuração de cache Redis
 
-4. **Revisão de Código:**
-   - Revisão de eficiência de Dockerfiles
-   - Avaliação de vulnerabilidades de segurança
-   - Validação de lógica de scripts entrypoint
+**4. Revisão de Código:**
+- Revisão de eficiência de Dockerfiles
+- Avaliação de vulnerabilidades de segurança
+- Validação de scripts de entrypoint
 
-5. **Aprendizagem e Explicação:**
-   - Compreensão de orquestração de containers
-   - Assimilação de conceitos de volumes vs bind mounts
-   - Aprendizagem sobre health checks e dependências
-
-**Nota:** Todas as sugestões geradas por IA foram revistas, testadas e adaptadas para garantir que cumprem os requisitos do projeto e as boas práticas. A implementação central, decisões de arquitetura e resolução de problemas foram realizadas com IA como assistente de aprendizagem e pesquisa.
+**Nota:** Todas as sugestões geradas por IA foram revistas, testadas e adaptadas para atender aos requisitos do projeto. A implementação central e as decisões de arquitetura foram feitas com IA como assistente de aprendizagem e pesquisa.
 
 ---
 
-## Estrutura do Projeto
-
-```
-.
-├── Makefile                    # Automação de build e deployment
-├── README.md                   # Documentação em inglês
-├── README.pt.md                # Este ficheiro
-├── secrets/                    # Credenciais sensíveis (não em git)
-│   ├── db_password.txt
-│   ├── db_root_password.txt
-│   ├── credentials.txt
-│   ├── redis_password.txt
-│   └── ftp_password.txt
-└── srcs/
-    ├── .env                    # Variáveis de ambiente
-    ├── docker-compose.yml      # Orquestração de serviços
-    └── requirements/
-        ├── mariadb/            # Serviço de base de dados
-        ├── nginx/              # Servidor web e reverse proxy
-        ├── wordpress/          # Aplicação CMS
-        └── bonus/
-            ├── adminer/        # Interface de admin de BD
-            ├── elasticsearch/  # Motor de pesquisa
-            ├── ftp/            # Serviço de transferência de ficheiros
-            ├── myprofile/      # Website estático
-            └── redis/          # Serviço de cache
-```
-
----
-
-## Licença
-
-Este projeto faz parte do currículo da escola 42 e destina-se a fins educacionais.
+**Última Atualização:** Janeiro 2026  
+**Status do Projeto:** ✅ Completo e Funcional
