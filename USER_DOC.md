@@ -126,7 +126,7 @@ Once the infrastructure is running, access the services through your web browser
   - Password: (see credentials section)
 
 #### Adminer (Database Administration)
-- **URL:** https://nmatondo.42.fr:8080 or http://localhost:8080
+- **URL:** http://nmatondo.42.fr:8080 or https://nmatondo.42.fr/adminer/
 - **Description:** Web-based database management tool
 - **Login Credentials:**
   - System: `MySQL`
@@ -443,5 +443,5 @@ For issues or questions:
 | Clean up | `make clean` |
 | Full reset | `make fclean` |
 | Access WordPress | https://nmatondo.42.fr |
-| Access Adminer | https://nmatondo.42.fr:8080 |
+| Access Adminer | https://nmatondo.42.fr/adminer/ |
 | View credentials | `cat secrets/credentials.txt` |
