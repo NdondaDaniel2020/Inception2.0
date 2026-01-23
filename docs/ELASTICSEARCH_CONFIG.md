@@ -33,7 +33,7 @@ Este documento fornece uma explicação detalhada de todas as configurações El
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Cluster                             │
+│                     Cluster                             │
 ├─────────────────────────────────────────────────────────┤
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐  │
 │  │   Node 1    │    │   Node 2    │    │   Node 3    │  │
