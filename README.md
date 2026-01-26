@@ -138,7 +138,7 @@ chmod 600 secrets/*.txt
 ### 5. Create Data Directories
 
 ```bash
-mkdir -p /home/nmatondo/data/{mariadb,wordpress,redis,elasticsearch}
+mkdir -p /home/nmatondo/data/{mariadb,wordpress,redis,elasticsearch,myprofile}
 ```
 
 ---
@@ -182,9 +182,41 @@ After starting the services, access them via:
 |---------|-----|-------------|
 | **WordPress** | https://nmatondo.42.fr | Admin from secrets/credentials.txt |
 | **Adminer** | http://nmatondo.42.fr:8080 | DB credentials from .env |
-| **MyProfile** | https://nmatondo.42.fr/myprofile/ | None (static site) |
+| **MyProfile** | http://nmatondo.42.fr:8888 | None (static site) |
 | **FTP** | ftp://nmatondo.42.fr:21 | FTP credentials from secrets |
 | **Elasticsearch** | http://nmatondo.42.fr:9200 | None |
+
+---
+
+## 💻 Technologies Stack
+
+### Core Technologies
+
+- **Base OS**: Alpine Linux 3.23 (all containers)
+- **Web Server**: NGINX (latest Alpine)
+- **Programming Language**: PHP 8.3 with 15+ extensions
+- **Database**: MariaDB (latest Alpine)
+- **Cache**: Redis (latest Alpine)
+- **FTP Server**: vsftpd (latest Alpine)
+- **Search Engine**: Elasticsearch (latest Alpine)
+- **Static Web Server**: httpd from busybox-extras
+- **Database Admin**: Adminer (single PHP file)
+
+### WordPress PHP Extensions
+
+The WordPress container includes:
+```
+php83-fpm php83-mysqli php83-pdo php83-pdo_mysql
+php83-gd php83-intl php83-mbstring php83-xml php83-zip
+php83-opcache php83-curl php83-tokenizer php83-session php83-phar
+```
+
+### Tools and Utilities
+
+- **WP-CLI**: WordPress command-line interface
+- **OpenSSL**: TLS certificate generation
+- **MariaDB Client**: Database connectivity
+- **Curl**: HTTP requests and downloads
 
 ---
 
@@ -196,17 +228,19 @@ After starting the services, access them via:
 Internet
     │
     ↓
-[NGINX:443] ← TLS/HTTPS Entry Point
+[NGINX:443] ← TLS/HTTPS Entry Point (TLS 1.2/1.3)
     │
-    ├─→ [WordPress:9000] ← PHP-FPM
+    ├─→ [WordPress:9000] ← PHP 8.3 FPM
     │        │
     │        ├─→ [MariaDB:3306] ← Database
-    │        ├─→ [Redis:6379] ← Cache
+    │        ├─→ [Redis:6379] ← Object Cache
     │        └─→ [Elasticsearch:9200] ← Search
     │
-    ├─→ [Adminer:8080] ← DB Management
-    ├─→ [FTP:21] ← File Management
-    └─→ [MyProfile:8888] ← Static Site
+    ├─→ [Adminer:8080] ← DB Management UI
+    ├─→ [FTP:21, 21000-21010] ← File Transfer (passive mode)
+    └─→ [MyProfile:8888] ← Static Personal Site
+
+All containers communicate via Docker bridge network "network"
 ```
 
 ### Data Persistence
@@ -338,6 +372,9 @@ docker ps
 
 # Test connectivity
 curl -k https://nmatondo.42.fr
+
+# Test MyProfile (HTTP on port 8888)
+curl http://nmatondo.42.fr:8888
 ```
 
 **Problem: Database connection errors**
@@ -348,7 +385,16 @@ docker exec -it mariadb mysql -u root -p
 # Verify WordPress can connect
 docker exec -it wordpress ping mariadb
 ```
+**Problem: FTP connection issues**
+```bash
+# Ensure passive ports are accessible
+# Ports 21000-21010 must be open for passive mode
+sudo ufw allow 21/tcp
+sudo ufw allow 21000:21010/tcp
 
+# Check FTP container logs
+docker logs ftp
+```
 ---
 
 ## 📝 License
@@ -450,8 +496,10 @@ Each container uses `exec` in entrypoint scripts to ensure the main process runs
 secrets:
   db_password:
     file: ../secrets/db_password.txt
+  ftp_credentials:
+    file: ../secrets/ftp_credentials.txt
 ```
-Secrets are stored in RAM (`tmpfs`) and never written to disk, providing superior security.
+Secrets are mounted at `/run/secrets/<secret_name>` in containers (tmpfs - RAM only), never written to disk.
 
 ### Docker Volumes vs Bind Mounts
 

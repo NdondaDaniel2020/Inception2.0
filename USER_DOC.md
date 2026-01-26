@@ -24,9 +24,9 @@ The Inception stack provides the following services:
 |---------|-------------|------|---------|
 | **Adminer** | Database Management | 8080 | Web-based database administration interface |
 | **Redis** | In-Memory Cache | 6379 (internal) | WordPress performance optimization |
-| **FTP Server** | File Transfer Protocol | 21 | File upload/download management |
-| **Elasticsearch** | Search Engine | 9200 (internal) | Advanced search capabilities |
-| **Static Website** | Personal Profile | 443/myprofile | Custom static HTML website |
+| **FTP Server** | File Transfer Protocol | 21, 21000-21010 | File upload/download management (passive mode) |
+| **Elasticsearch** | Search Engine | 9200, 9300 | Advanced search capabilities |
+| **Static Website** | Personal Profile | 8888 | Custom static HTML website |
 
 All services run in isolated Docker containers and communicate through a private Docker network.
 
@@ -126,7 +126,7 @@ Once the infrastructure is running, access the services through your web browser
   - Password: (see credentials section)
 
 #### Adminer (Database Administration)
-- **URL:** http://nmatondo.42.fr:8080 or https://nmatondo.42.fr/adminer/
+- **URL:** http://nmatondo.42.fr:8080
 - **Description:** Web-based database management tool
 - **Login Credentials:**
   - System: `MySQL`
@@ -136,7 +136,7 @@ Once the infrastructure is running, access the services through your web browser
   - Database: `wordpress`
 
 #### Static Profile Website
-- **URL:** https://nmatondo.42.fr/myprofile
+- **URL:** http://nmatondo.42.fr:8888
 - **Description:** Personal static website
 
 #### FTP Server
@@ -169,7 +169,7 @@ secrets/
 ├── db_password.txt           # WordPress database password
 ├── credentials.txt           # WordPress admin credentials
 ├── redis_password.txt        # Redis authentication password
-└── ftp_password.txt          # FTP user password
+└── ftp_credentials.txt       # FTP user credentials (username:password)
 ```
 
 ⚠️ **Security Notice:** Never commit the `secrets/` directory to version control!
@@ -198,8 +198,9 @@ cat secrets/redis_password.txt
 
 #### FTP Credentials
 ```bash
-cat secrets/ftp_password.txt
+cat secrets/ftp_credentials.txt
 ```
+Format: `username:password`
 
 ### Updating Credentials
 
@@ -389,7 +390,7 @@ docker volume ls
 docker run --rm -v inception_wordpress_data:/data -v $(pwd):/backup alpine tar czf /backup/wordpress_backup.tar.gz /data
 
 # Backup Database
-docker exec mariadb mariadb-dump -u root -p$(cat secrets/db_root_password.txt) wordpress > wordpress_backup.sql
+docker exec mariadb mariadb-dump -u root -p$(docker exec mariadb cat /run/secrets/db_root_password) wordpress > wordpress_backup.sql
 ```
 
 ---

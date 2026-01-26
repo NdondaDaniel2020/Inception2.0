@@ -8,12 +8,70 @@ This document provides comprehensive technical guidance for developers working o
 
 ## Table of Contents
 
-1. [Environment Setup from Scratch](#environment-setup-from-scratch)
-2. [Building and Launching the Project](#building-and-launching-the-project)
-3. [Container and Volume Management](#container-and-volume-management)
-4. [Data Storage and Persistence](#data-storage-and-persistence)
-5. [Development Workflow](#development-workflow)
-6. [Troubleshooting and Debugging](#troubleshooting-and-debugging)
+1. [Technologies and Versions](#technologies-and-versions)
+2. [Environment Setup from Scratch](#environment-setup-from-scratch)
+3. [Building and Launching the Project](#building-and-launching-the-project)
+4. [Container and Volume Management](#container-and-volume-management)
+5. [Data Storage and Persistence](#data-storage-and-persistence)
+6. [Development Workflow](#development-workflow)
+7. [Troubleshooting and Debugging](#troubleshooting-and-debugging)
+
+---
+
+## Technologies and Versions
+
+### Base Images and Core Technologies
+
+All services are built from **Alpine Linux 3.23** for minimal image size and security.
+
+#### Mandatory Services Stack
+
+| Service | Technology | Version | Key Components |
+|---------|-----------|---------|----------------|
+| **NGINX** | NGINX + OpenSSL | Latest (Alpine) | Reverse proxy, TLS 1.2/1.3, self-signed certificates |
+| **WordPress** | PHP-FPM | 8.3 | WP-CLI, 15+ PHP extensions, www-data user |
+| **MariaDB** | MariaDB Server | Latest (Alpine) | InnoDB engine, health checks |
+
+#### Bonus Services Stack
+
+| Service | Technology | Version | Key Components |
+|---------|-----------|---------|----------------|
+| **Redis** | Redis Server | Latest (Alpine) | In-memory cache, password authentication |
+| **Adminer** | PHP + Adminer | 8.3 + Latest | Single-file database manager |
+| **FTP** | vsftpd | Latest (Alpine) | Passive mode (21000-21010), SSL support |
+| **Elasticsearch** | Elasticsearch | Latest (Alpine) | Cluster health monitoring |
+| **MyProfile** | httpd (Apache) | Latest (Alpine) | Static HTML/CSS/JS website |
+
+### WordPress PHP Extensions
+
+The WordPress container includes all necessary PHP 8.3 extensions:
+
+```dockerfile
+php83 php83-fpm php83-mysqli php83-pdo php83-pdo_mysql
+php83-gd php83-intl php83-mbstring php83-xml php83-zip
+php83-opcache php83-curl php83-tokenizer php83-session php83-phar
+```
+
+### Development Tools
+
+- **WP-CLI**: WordPress command-line interface for automation
+- **MariaDB Client**: Database connectivity tools
+- **Curl**: HTTP client for testing and downloads
+- **OpenSSL**: Certificate generation and encryption
+
+### Network Architecture
+
+- **Network Driver**: Bridge (default Docker network)
+- **Service Discovery**: DNS-based via Docker network
+- **Published Ports**: NGINX (443), Adminer (8080), FTP (21, 21000-21010), Elasticsearch (9200, 9300), MyProfile (8888)
+- **Internal Ports**: MariaDB (3306), Redis (6379), WordPress (9000)
+
+### Security Features
+
+- **Docker Secrets**: All passwords managed via `/run/secrets/`
+- **TLS Encryption**: NGINX with self-signed certificates (TLS 1.2/1.3)
+- **User Isolation**: Services run as non-root users where possible
+- **Network Isolation**: Private bridge network for inter-service communication
 
 ---
 
@@ -118,9 +176,11 @@ Create all required secret files with secure passwords:
 openssl rand -base64 32 > secrets/db_root_password.txt
 openssl rand -base64 32 > secrets/db_password.txt
 openssl rand -base64 32 > secrets/redis_password.txt
-openssl rand -base64 16 > secrets/ftp_password.txt
 
-# Create WordPress admin credentials
+# Create FTP credentials (username:password format)
+echo "ftpuser:$(openssl rand -base64 16)" > secrets/ftp_credentials.txt
+
+# Create WordPress admin credentials (username:password format)
 echo "admin:$(openssl rand -base64 16)" > secrets/credentials.txt
 ```
 
@@ -134,7 +194,7 @@ echo "secrets/" >> .gitignore
 If using bind mounts instead of named volumes:
 
 ```bash
-mkdir -p /home/$USER/data/{mariadb,wordpress,redis,elasticsearch}
+mkdir -p /home/$USER/data/{mariadb,wordpress,redis,elasticsearch,myprofile}
 ```
 
 Update `DATA_PATH` in Makefile:
@@ -184,7 +244,7 @@ Inception/
     ├── db_password.txt
     ├── credentials.txt
     ├── redis_password.txt
-    └── ftp_password.txt
+    └── ftp_credentials.txt
 ```
 
 ### Using the Makefile
@@ -227,6 +287,7 @@ make bonus_up       # Start all containers
 | `restart` | Restart containers | `docker compose restart` |
 | `status` | Show container status | `docker compose ps` |
 | `re` | Rebuild from scratch | `fclean all` |
+| `bre` | Bonus rebuild from scratch | `fclean bonus` |
 
 ### Using Docker Compose Directly
 
@@ -258,40 +319,39 @@ docker compose restart nginx
 
 #### Image Build Order
 
-1. **MariaDB** - Independent, builds first
-2. **Redis** - Independent, builds in parallel
-3. **Elasticsearch** - Independent, builds in parallel
+1. **MariaDB** - Independent, builds first (with health check)
+2. **Redis** - Depends on MariaDB (starts after)
+3. **Elasticsearch** - Depends on MariaDB (with health check)
 4. **WordPress** - Depends on MariaDB health check
 5. **NGINX** - Depends on WordPress
-6. **Adminer** - Depends on MariaDB
-7. **FTP** - Independent
-8. **Static Website** - Independent
+6. **Adminer** - Depends on MariaDB health check
+7. **FTP** - Depends on WordPress
+8. **MyProfile** - Independent static website
 
 #### Build Arguments and Context
 
-Each Dockerfile uses build arguments for flexibility:
+Each Dockerfile uses Alpine Linux 3.23 as the base image:
 
 ```dockerfile
-# Example from WordPress Dockerfile
-ARG PHP_VERSION=8.2
-ARG ALPINE_VERSION=3.18
+# All services use Alpine 3.23
+FROM alpine:3.23
 
-FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION}
+# WordPress uses PHP 8.3
+RUN apk add --no-cache php83 php83-fpm ...
 ```
 
-#### Multi-Stage Builds
+#### Container Images
 
-Some services use multi-stage builds for optimization:
+All services are built from Alpine Linux 3.23 without using pre-built Docker Hub images:
 
 ```dockerfile
-# Build stage
-FROM alpine:3.18 AS builder
-RUN apk add --no-cache build-base
-# ... compile from source
+# All Dockerfiles start with:
+FROM alpine:3.23
 
-# Runtime stage
-FROM alpine:3.18
-COPY --from=builder /compiled-binary /usr/local/bin/
+# Then install required packages:
+RUN apk add --no-cache nginx openssl  # NGINX
+RUN apk add --no-cache mariadb mariadb-client  # MariaDB
+RUN apk add --no-cache php83 php83-fpm ...  # WordPress
 ```
 
 ---
@@ -320,7 +380,8 @@ services:
       - db_root_password
       - db_password
     healthcheck:
-      test: ["CMD-SHELL", "mariadb -u root -p... -e 'SELECT 1'"]
+      test: ["CMD-SHELL", "mariadb -u root -p$$(cat /run/secrets/db_root_password) -e 'SELECT 1' >/dev/null 2>&1"]
+      start_period: 30s
       interval: 10s
       timeout: 5s
       retries: 5
@@ -333,19 +394,65 @@ All containers communicate through a custom bridge network:
 ```yaml
 networks:
   network:
-    driver: bridge
+    driver: bridge  # Using default bridge driver
 ```
+
+**Secrets Management:**
+
+Docker secrets are used for sensitive data:
+
+```yaml
+secrets:
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  db_password:
+    file: ../secrets/db_password.txt
+  credentials:
+    file: ../secrets/credentials.txt
+  redis_password:
+    file: ../secrets/redis_password.txt
+  ftp_credentials:
+    file: ../secrets/ftp_credentials.txt
+```
+
+Secrets are mounted at `/run/secrets/<secret_name>` inside containers.
 
 **Service Discovery:**
 - Containers can reach each other by service name
 - Example: WordPress connects to `mariadb:3306`
 - DNS resolution handled by Docker
 
+**Published Ports:**
+- **NGINX**: 443 (HTTPS)
+- **Adminer**: 8080 (HTTP)
+- **FTP**: 21 (control), 21000-21010 (passive mode)
+- **Elasticsearch**: 9200 (HTTP API), 9300 (cluster communication)
+- **MyProfile**: 8888 (HTTP)
+- **WordPress**: 9000 (internal only, accessed via NGINX)
+
 #### Health Checks
 
 Health checks ensure services are ready before dependent services start:
 
 ```yaml
+# MariaDB health check
+mariadb:
+  healthcheck:
+    test: ["CMD-SHELL", "mariadb -u root -p$$(cat /run/secrets/db_root_password) -e 'SELECT 1' >/dev/null 2>&1"]
+    start_period: 30s
+    interval: 10s
+    timeout: 5s
+    retries: 5
+
+# Elasticsearch health check
+elasticsearch:
+  healthcheck:
+    test: ["CMD-SHELL", "wget -q -O /dev/null http://nmatondo.42.fr:9200/_cluster/health || exit 1"]
+    start_period: 60s
+    interval: 10s
+    timeout: 5s
+    retries: 5
+
 depends_on:
   mariadb:
     condition: service_healthy
@@ -405,6 +512,9 @@ docker exec -it wordpress /bin/sh  # Alpine uses sh
 # Single command execution
 docker exec mariadb mariadb -u root -p$(cat ../secrets/db_root_password.txt) -e "SHOW DATABASES;"
 
+# Or using Docker secrets path inside container
+docker exec mariadb mariadb -u root -p$(docker exec mariadb cat /run/secrets/db_root_password) -e "SHOW DATABASES;"
+
 # Execute as specific user
 docker exec -u www-data wordpress ls -la /var/www/html
 ```
@@ -449,6 +559,23 @@ volumes:
       type: none
       o: bind
       device: /home/nmatondo/data/wordpress
+
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nmatondo/data/redis
+
+  elasticsearch_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nmatondo/data/elasticsearch
+
+  myprofile_data:
+    driver: local
 ```
 
 #### Volume Commands
@@ -522,6 +649,8 @@ Data is stored directly on the host:
 - MariaDB: `$DATA_PATH/mariadb`
 - WordPress: `$DATA_PATH/wordpress`
 - Redis: `$DATA_PATH/redis`
+- Elasticsearch: `$DATA_PATH/elasticsearch`
+- MyProfile: (uses Docker-managed volume)
 
 ### Data Persistence Strategy
 
@@ -532,7 +661,8 @@ Data is stored directly on the host:
 | **MariaDB** | Database files | `mariadb_data` | `/var/lib/mysql` |
 | **WordPress** | Files, themes, plugins, uploads | `wordpress_data` | `/var/www/html` |
 | **Redis** | Cache data | `redis_data` | `/data` |
-| **Elasticsearch** | Index data | `elasticsearch_data` | `/usr/share/elasticsearch/data` |
+| **Elasticsearch** | Index data | `elasticsearch_data` | `/var/lib/elasticsearch` |
+| **MyProfile** | Static website files | `myprofile_data` | `/var/www/myprofile` |
 
 #### How Persistence Works
 
@@ -566,13 +696,13 @@ docker compose up -d wordpress
 # Export database
 docker exec mariadb mariadb-dump \
   -u root \
-  -p$(cat secrets/db_root_password.txt) \
+  -p$(docker exec mariadb cat /run/secrets/db_root_password) \
   --all-databases > backup_$(date +%Y%m%d).sql
 
 # Backup specific database
 docker exec mariadb mariadb-dump \
   -u root \
-  -p$(cat secrets/db_root_password.txt) \
+  -p$(docker exec mariadb cat /run/secrets/db_root_password) \
   wordpress > wordpress_backup.sql
 ```
 
@@ -582,13 +712,13 @@ docker exec mariadb mariadb-dump \
 # Import database
 docker exec -i mariadb mariadb \
   -u root \
-  -p$(cat secrets/db_root_password.txt) \
+  -p$(docker exec mariadb cat /run/secrets/db_root_password) \
   < backup.sql
 
 # Restore specific database
 docker exec -i mariadb mariadb \
   -u root \
-  -p$(cat secrets/db_root_password.txt) \
+  -p$(docker exec mariadb cat /run/secrets/db_root_password) \
   wordpress < wordpress_backup.sql
 ```
 
@@ -795,7 +925,7 @@ docker logs mariadb
 cat secrets/db_password.txt
 
 # Test connection manually
-docker exec mariadb mariadb -u wpuser -p$(cat secrets/db_password.txt) -e "SELECT 1"
+docker exec mariadb mariadb -u wpuser -p$(docker exec mariadb cat /run/secrets/db_password) -e "SELECT 1"
 ```
 
 ### Advanced Debugging
@@ -913,7 +1043,7 @@ docker exec -it <container> /bin/sh
 docker run --rm -v <volume>:/data alpine ls -la /data
 
 # Backup database
-docker exec mariadb mariadb-dump -u root -p$(cat secrets/db_root_password.txt) wordpress > backup.sql
+docker exec mariadb mariadb-dump -u root -p$(docker exec mariadb cat /run/secrets/db_root_password) wordpress > backup.sql
 ```
 
 ---
