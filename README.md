@@ -272,15 +272,15 @@ Inception/
 ├── DEV_DOC.md          # Developer documentation
 ├── USER_DOC.md         # User guide
 ├── secrets/            # Sensitive credentials
-├── srcs/
-│   ├── .env            # Environment variables
-│   ├── docker-compose.yml  # Service orchestration
-│   └── requirements/   # Service configurations
-│       ├── nginx/      # Web server
-│       ├── wordpress/  # CMS
-│       ├── mariadb/    # Database
-│       └── bonus/      # Additional services
-└── docs/              # Additional documentation
+└── srcs/
+    ├── .env            # Environment variables
+    ├── docker-compose.yml  # Service orchestration
+    └── requirements/   # Service configurations
+        ├── nginx/      # Web server
+        ├── wordpress/  # CMS
+        ├── mariadb/    # Database
+        └── bonus/      # Additional services
+
 ```
 
 ### Building Individual Services
@@ -315,16 +315,6 @@ docker ps -a
 
 - [DEV_DOC.md](DEV_DOC.md) - Complete developer documentation
 - [USER_DOC.md](USER_DOC.md) - User guide and service documentation
-- [docs/](docs/) - Service-specific configuration guides
-
-### Service-Specific Documentation
-
-- [NGINX_CONFIG.md](docs/NGINX_CONFIG.md) - NGINX configuration details
-- [WORDPRESS_CONFIG.md](docs/WORDPRESS_CONFIG.md) - WordPress setup
-- [MARIADB_CONFIG.md](docs/MARIADB_CONFIG.md) - Database configuration
-- [REDIS_CONFIG.md](docs/REDIS_CONFIG.md) - Redis cache setup
-- [FTP_CONFIG.md](docs/FTP_CONFIG.md) - FTP server configuration
-- [ELASTICSEARCH_CONFIG.md](docs/ELASTICSEARCH_CONFIG.md) - Elasticsearch setup
 
 ---
 
@@ -425,8 +415,7 @@ This project is part of the 42 School curriculum and is intended for educational
 For issues and questions:
 1. Check [USER_DOC.md](USER_DOC.md) for user guides
 2. Review [DEV_DOC.md](DEV_DOC.md) for technical details
-3. Consult service-specific documentation in [docs/](docs/)
-4. Check container logs: `make logs`
+3. Check container logs: `make logs`
 
 ---
 
@@ -523,6 +512,26 @@ volumes:
 ```
 This approach combines Docker volume management with direct host path access for data persistence.
 
+### Docker Network vs Host Network
+
+| Aspect | Docker Network (Bridge) | Host Network |
+|--------|------------------------|-------------|
+| **Isolation** | Network isolated from host | Shares host's network stack |
+| **Port Mapping** | Requires explicit port mapping | Direct access to host ports |
+| **Security** | Better isolation and security | Less secure, no network isolation |
+| **Performance** | Slight network overhead | Maximum network performance |
+| **Container Communication** | Easy inter-container communication | Requires localhost or host IP |
+| **Use Case** | Production, multi-container apps | High-performance networking needs |
+
+**Implementation in Inception:**
+```yaml
+networks:
+  inception:
+    driver: bridge
+    name: inception
+```
+Bridge networking provides isolated communication between containers while maintaining security boundaries from the host system.
+
 ---
 
 ## 📚 Resources
@@ -533,14 +542,6 @@ This approach combines Docker volume management with direct host path access for
 - [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
 - [Docker Security](https://docs.docker.com/engine/security/)
 - [Docker Networking](https://docs.docker.com/network/)
-
-### Service-Specific Resources
-- [NGINX Documentation](https://nginx.org/en/docs/)
-- [MariaDB Documentation](https://mariadb.com/kb/en/)
-- [WordPress Developer Resources](https://developer.wordpress.org/)
-- [PHP-FPM Configuration](https://www.php.net/manual/en/install.fpm.php)
-- [Redis Documentation](https://redis.io/documentation)
-- [vsftpd Documentation](https://security.appspot.com/vsftpd.html)
 
 ---
 

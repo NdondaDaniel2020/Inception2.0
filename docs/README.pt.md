@@ -475,6 +475,26 @@ volumes:
 ```
 Esta abordagem combina gestão de volumes Docker com acesso direto ao caminho do host para persistência de dados.
 
+### Docker Network vs Host Network
+
+| Aspecto | Docker Network (Bridge) | Host Network |
+|---------|------------------------|-------------|
+| **Isolamento** | Rede isolada do host | Partilha stack de rede do host |
+| **Mapeamento de Portas** | Requer mapeamento explícito de portas | Acesso direto às portas do host |
+| **Segurança** | Melhor isolamento e segurança | Menos seguro, sem isolamento de rede |
+| **Performance** | Ligeiro overhead de rede | Performance máxima de rede |
+| **Comunicação entre Containers** | Comunicação fácil entre containers | Requer localhost ou IP do host |
+| **Caso de Uso** | Produção, apps multi-container | Necessidades de networking de alta performance |
+
+**Implementação no Inception:**
+```yaml
+networks:
+  inception:
+    driver: bridge
+    name: inception
+```
+Networking bridge proporciona comunicação isolada entre containers mantendo fronteiras de segurança do sistema host.
+
 ---
 
 ## 📚 Recursos
