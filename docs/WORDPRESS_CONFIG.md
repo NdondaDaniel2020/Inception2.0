@@ -10,7 +10,7 @@ Este documento explica em detalhe todas as configurações e parâmetros utiliza
 
 | Componente | Versão | Descrição |
 |------------|--------|-----------|
-| **Sistema Base** | Alpine Linux 3.23 | Sistema operacional minimalista |
+| **Sistema Base** | Alpine Linux 3.22 | Sistema operacional minimalista |
 | **PHP** | 8.3 | Linguagem de programação |
 | **PHP-FPM** | 8.3 | FastCGI Process Manager |
 | **WP-CLI** | Latest | Interface de linha de comando WordPress |

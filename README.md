@@ -34,7 +34,7 @@ Inception is a comprehensive system administration project that demonstrates adv
 | **Elasticsearch** | Alpine 3.22  + ES | Search and analytics engine | 9200, 9300 |
 | **MyProfile** | Alpine 3.22  + httpd | Static personal website | 8888 |
 
-All services are built from **Alpine Linux 3.23** using custom Dockerfiles without pre-built application images from Docker Hub.
+All services are built from **Alpine Linux 3.22** using custom Dockerfiles without pre-built application images from Docker Hub.
 
 ---
 
@@ -192,7 +192,7 @@ After starting the services, access them via:
 
 ### Core Technologies
 
-- **Base OS**: Alpine Linux 3.23 (all containers)
+- **Base OS**: Alpine Linux 3.22 (all containers)
 - **Web Server**: NGINX (latest Alpine)
 - **Programming Language**: PHP 8.3 with 15+ extensions
 - **Database**: MariaDB (latest Alpine)
@@ -447,7 +447,7 @@ This project leverages **Docker** containerization to create an isolated, reprod
 All containers are built from custom Dockerfiles (no pre-built images from Docker Hub except base OS). This provides:
 - Full control over the build process
 - Understanding of each service's dependencies
-- Security through minimal base images (Alpine Linux 3.23)
+- Security through minimal base images (Alpine Linux 3.22)
 - Optimization for specific use cases
 
 #### Health Checks

@@ -22,7 +22,7 @@ This document provides comprehensive technical guidance for developers working o
 
 ### Base Images and Core Technologies
 
-All services are built from **Alpine Linux 3.23** for minimal image size and security.
+All services are built from **Alpine Linux 3.22** for minimal image size and security.
 
 #### Mandatory Services Stack
 
@@ -330,11 +330,11 @@ docker compose restart nginx
 
 #### Build Arguments and Context
 
-Each Dockerfile uses Alpine Linux 3.23 as the base image:
+Each Dockerfile uses Alpine Linux 3.22 as the base image:
 
 ```dockerfile
-# All services use Alpine 3.23
-:3.23
+# All services use Alpine 3.22
+:3.22
 
 # WordPress uses PHP 8.3
 RUN apk add --no-cache php83 php83-fpm ...
@@ -342,7 +342,7 @@ RUN apk add --no-cache php83 php83-fpm ...
 
 #### Container Images
 
-All services are built from Alpine Linux 3.23 without using pre-built Docker Hub images:
+All services are built from Alpine Linux 3.22 without using pre-built Docker Hub images:
 
 ```dockerfile
 # All Dockerfiles start with:
