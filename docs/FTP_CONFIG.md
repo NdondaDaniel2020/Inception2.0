@@ -840,6 +840,819 @@ ftp:
 
 ---
 
+## Como Usar o FTP - Guia Prático
+
+### Login no Servidor FTP
+
+#### Método 1: Cliente FTP Nativo (Linux/Mac)
+
+**Conexão básica:**
+```bash
+ftp nmatondo.42.fr 21
+```
+
+**Saída esperada:**
+```
+Connected to nmatondo.42.fr.
+220 Welcome to vsftpd FTP service.
+Name (nmatondo.42.fr:user): ftpuser
+331 Please specify the password.
+Password: [digite a senha]
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp>
+```
+
+**Conexão com credenciais inline:**
+```bash
+ftp -n nmatondo.42.fr 21 << EOF
+user ftpuser sua_senha
+EOF
+```
+
+#### Método 2: lftp (Recomendado)
+
+**Instalação:**
+```bash
+# Debian/Ubuntu
+sudo apt install lftp
+
+# Alpine/Docker
+apk add lftp
+
+# macOS
+brew install lftp
+```
+
+**Conexão:**
+```bash
+lftp -u ftpuser,sua_senha ftp://nmatondo.42.fr
+```
+
+**Ou interativo:**
+```bash
+lftp
+lftp> open nmatondo.42.fr
+lftp nmatondo.42.fr> user ftpuser
+Password: [digite a senha]
+lftp ftpuser@nmatondo.42.fr:~>
+```
+
+**Conexão com prompt de senha:**
+```bash
+lftp -u ftpuser ftp://nmatondo.42.fr
+# Pedirá a senha de forma segura
+```
+
+#### Método 3: FileZilla (GUI)
+
+**Configuração:**
+1. Abrir FileZilla
+2. Arquivo → Gestor de Sites → Novo Site
+3. Configurar:
+   - **Protocolo:** FTP - File Transfer Protocol
+   - **Host:** nmatondo.42.fr
+   - **Porta:** 21
+   - **Criptografia:** Usar FTP simples (inseguro)
+   - **Tipo de autenticação:** Normal
+   - **Utilizador:** ftpuser
+   - **Senha:** [sua senha do secrets/ftp_credentials.txt]
+4. Conectar
+
+**Conexão rápida:**
+- Host: `nmatondo.42.fr`
+- Utilizador: `ftpuser`
+- Senha: `[senha]`
+- Porta: `21`
+- Clicar "Ligação Rápida"
+
+#### Método 4: Dentro do Container Docker
+
+**Conectar do host para o container:**
+```bash
+# Primeiro, entrar no container WordPress
+docker exec -it wordpress sh
+
+# Instalar cliente FTP
+apk add lftp
+
+# Conectar ao FTP
+lftp -u ftpuser,senha ftp://ftp
+```
+
+**Testar conexão:**
+```bash
+# Verificar se porta 21 está aberta
+nc -zv nmatondo.42.fr 21
+
+# Telnet para teste manual
+telnet nmatondo.42.fr 21
+```
+
+---
+
+### Operações CRUD com FTP
+
+#### CREATE (Criar/Upload)
+
+##### Upload de Arquivo Único
+
+**Cliente FTP nativo:**
+```bash
+ftp nmatondo.42.fr
+ftp> user ftpuser
+Password: ****
+ftp> cd wp-content/themes
+ftp> put meu-tema.zip
+local: meu-tema.zip remote: meu-tema.zip
+227 Entering Passive Mode (172,18,0,4,82,8)
+150 Ok to send data.
+226 Transfer complete.
+15432 bytes sent in 0.05 secs (308.64 KB/s)
+ftp> bye
+```
+
+**lftp (mais moderno):**
+```bash
+lftp -u ftpuser,senha ftp://nmatondo.42.fr
+lftp> cd wp-content/themes
+lftp> put meu-tema.zip
+lftp> bye
+```
+
+**lftp one-liner:**
+```bash
+lftp -u ftpuser,senha -e "cd wp-content/themes; put meu-tema.zip; bye" ftp://nmatondo.42.fr
+```
+
+##### Upload de Múltiplos Arquivos
+
+**Cliente FTP nativo:**
+```bash
+ftp> mput *.php
+mput index.php? y
+mput functions.php? y
+mput style.css? y
+```
+
+**lftp (mais eficiente):**
+```bash
+lftp> mput *.php
+```
+
+**lftp com confirmação automática:**
+```bash
+lftp> set confirm:yes no
+lftp> mput *.php
+```
+
+##### Upload de Diretório Completo
+
+**lftp (mirror upload):**
+```bash
+lftp> mirror -R meu-tema wp-content/themes/meu-tema
+```
+
+**Explicação:**
+- `-R`: Reverse (upload, não download)
+- `meu-tema`: Diretório local
+- `wp-content/themes/meu-tema`: Diretório remoto
+
+**Com exclusões:**
+```bash
+lftp> mirror -R --exclude .git/ --exclude node_modules/ meu-tema wp-content/themes/meu-tema
+```
+
+##### Criar Diretório
+
+**Cliente FTP nativo:**
+```bash
+ftp> mkdir wp-content/uploads/2026
+257 "/wp-content/uploads/2026" created.
+```
+
+**lftp:**
+```bash
+lftp> mkdir wp-content/uploads/2026
+```
+
+**Criar estrutura de diretórios:**
+```bash
+lftp> mkdir -p wp-content/uploads/2026/01
+```
+
+##### Upload com Modo Binário vs ASCII
+
+**Modo Binário (padrão, recomendado):**
+```bash
+ftp> binary
+200 Switching to Binary mode.
+ftp> put imagem.jpg
+```
+
+**Modo ASCII (apenas para arquivos de texto):**
+```bash
+ftp> ascii
+200 Switching to ASCII mode.
+ftp> put readme.txt
+```
+
+---
+
+#### READ (Ler/Download)
+
+##### Download de Arquivo Único
+
+**Cliente FTP nativo:**
+```bash
+ftp> get wp-config.php
+local: wp-config.php remote: wp-config.php
+227 Entering Passive Mode (172,18,0,4,82,8)
+150 Opening BINARY mode data connection for wp-config.php (2853 bytes).
+226 Transfer complete.
+2853 bytes received in 0.02 secs (142.65 KB/s)
+```
+
+**lftp:**
+```bash
+lftp> get wp-config.php
+```
+
+**lftp com renomeação:**
+```bash
+lftp> get wp-config.php -o wp-config-backup.php
+```
+
+##### Download de Múltiplos Arquivos
+
+**Cliente FTP nativo:**
+```bash
+ftp> mget *.php
+mget index.php? y
+mget functions.php? y
+```
+
+**lftp:**
+```bash
+lftp> mget *.php
+```
+
+**lftp com padrão:**
+```bash
+lftp> mget wp-content/themes/twentytwentyone/*.css
+```
+
+##### Download de Diretório Completo
+
+**lftp (mirror download):**
+```bash
+lftp> mirror wp-content/themes/meu-tema backup-tema
+```
+
+**Explicação:**
+- Sem `-R`: Download (padrão)
+- `wp-content/themes/meu-tema`: Diretório remoto
+- `backup-tema`: Diretório local
+
+**Mirror com opções:**
+```bash
+lftp> mirror --verbose --parallel=4 wp-content/uploads backup-uploads
+```
+
+**Opções úteis:**
+- `--verbose`: Mostra progresso
+- `--parallel=4`: 4 downloads simultâneos
+- `--only-newer`: Apenas arquivos novos
+- `--delete`: Apaga arquivos locais que não existem remotamente
+
+##### Listar Arquivos (Read Listing)
+
+**Cliente FTP nativo:**
+```bash
+ftp> ls
+227 Entering Passive Mode (172,18,0,4,82,8)
+150 Here comes the directory listing.
+drwxr-xr-x    5 ftpuser  ftpuser      4096 Jan 13 10:30 wp-admin
+drwxr-xr-x    2 ftpuser  ftpuser      4096 Jan 13 10:30 wp-content
+drwxr-xr-x    3 ftpuser  ftpuser      4096 Jan 13 10:30 wp-includes
+-rw-r--r--    1 ftpuser  ftpuser      2853 Jan 13 10:30 wp-config.php
+226 Directory send OK.
+```
+
+**Listar detalhado:**
+```bash
+ftp> dir
+```
+
+**lftp (mais legível):**
+```bash
+lftp> ls
+lftp> ls -la  # Detalhado incluindo ocultos
+lftp> cls     # Apenas nomes (clean list)
+```
+
+**Listar recursivo:**
+```bash
+lftp> find
+# Ou
+lftp> du -h  # Com tamanhos
+```
+
+##### Ver Conteúdo de Arquivo Remoto
+
+**lftp:**
+```bash
+lftp> cat wp-config.php
+# Mostra conteúdo do arquivo
+
+lftp> more wp-config.php
+# Paginado
+
+lftp> less wp-config.php
+# Navegável
+```
+
+##### Verificar Tamanho de Arquivo
+
+**Cliente FTP nativo:**
+```bash
+ftp> size wp-config.php
+213 2853
+```
+
+**lftp:**
+```bash
+lftp> du -h wp-config.php
+2.8K    wp-config.php
+```
+
+---
+
+#### UPDATE (Atualizar/Modificar)
+
+##### Sobrescrever Arquivo Existente
+
+**Cliente FTP nativo:**
+```bash
+ftp> put wp-config.php
+local: wp-config.php remote: wp-config.php
+227 Entering Passive Mode (172,18,0,4,82,8)
+150 Ok to send data.
+226 Transfer complete.
+2900 bytes sent in 0.02 secs (145.00 KB/s)
+```
+
+**lftp (sobrescreve automaticamente):**
+```bash
+lftp> put wp-config.php
+```
+
+**lftp com backup antes de sobrescrever:**
+```bash
+lftp> !cp wp-config.php wp-config-backup.php  # Backup local
+lftp> get wp-config.php -o wp-config-remote-backup.php  # Backup remoto
+lftp> put wp-config.php  # Sobrescreve
+```
+
+##### Renomear Arquivo (Atualizar Nome)
+
+**Cliente FTP nativo:**
+```bash
+ftp> rename antigo.php novo.php
+350 Ready for RNTO.
+250 Rename successful.
+```
+
+**lftp:**
+```bash
+lftp> rename antigo.php novo.php
+# Ou
+lftp> mv antigo.php novo.php
+```
+
+##### Mover Arquivo (Atualizar Localização)
+
+**Cliente FTP nativo (não suporta diretamente):**
+```bash
+# Workaround: download e upload
+ftp> get arquivo.php
+ftp> cd novo-diretorio
+ftp> put arquivo.php
+ftp> cd ..
+ftp> delete arquivo.php
+```
+
+**lftp:**
+```bash
+lftp> mv wp-content/themes/arquivo.php wp-content/plugins/arquivo.php
+```
+
+##### Modificar Permissões (Update Permissions)
+
+**Cliente FTP nativo:**
+```bash
+ftp> chmod 644 wp-config.php
+200 SITE CHMOD command ok.
+```
+
+**lftp:**
+```bash
+lftp> chmod 644 wp-config.php
+lftp> chmod 755 wp-content/uploads
+```
+
+**Recursivo (lftp):**
+```bash
+lftp> find wp-content/uploads -type f -exec chmod 644 {} \;
+lftp> find wp-content/uploads -type d -exec chmod 755 {} \;
+```
+
+##### Sincronizar Arquivos (Update Incremental)
+
+**lftp mirror bidirecional:**
+```bash
+# Upload apenas arquivos novos/modificados
+lftp> mirror -R --only-newer meu-tema wp-content/themes/meu-tema
+
+# Download apenas arquivos novos/modificados
+lftp> mirror --only-newer wp-content/uploads backup-uploads
+```
+
+**Com exclusões:**
+```bash
+lftp> mirror -R --only-newer --exclude .git/ --exclude .DS_Store meu-tema wp-content/themes/meu-tema
+```
+
+---
+
+#### DELETE (Apagar)
+
+##### Apagar Arquivo Único
+
+**Cliente FTP nativo:**
+```bash
+ftp> delete arquivo-teste.txt
+250 Delete operation successful.
+```
+
+**lftp:**
+```bash
+lftp> rm arquivo-teste.txt
+```
+
+**Com confirmação:**
+```bash
+lftp> rm -i arquivo-teste.txt
+rm ok, `arquivo-teste.txt'? (yes/no) yes
+```
+
+##### Apagar Múltiplos Arquivos
+
+**Cliente FTP nativo:**
+```bash
+ftp> mdelete *.tmp
+mdelete cache-1.tmp? y
+mdelete cache-2.tmp? y
+```
+
+**lftp:**
+```bash
+lftp> mrm *.tmp
+# Ou
+lftp> rm *.tmp
+```
+
+**lftp com padrão glob:**
+```bash
+lftp> rm wp-content/uploads/2025/*.tmp
+```
+
+##### Apagar Diretório Vazio
+
+**Cliente FTP nativo:**
+```bash
+ftp> rmdir diretorio-vazio
+250 Remove directory operation successful.
+```
+
+**lftp:**
+```bash
+lftp> rmdir diretorio-vazio
+```
+
+##### Apagar Diretório com Conteúdo
+
+**Cliente FTP nativo (não suporta diretamente):**
+```bash
+# Não há comando nativo para apagar diretório recursivamente
+# Precisa apagar arquivos primeiro, depois diretórios
+```
+
+**lftp (recomendado):**
+```bash
+lftp> rm -r diretorio-completo
+```
+
+**Com confirmação:**
+```bash
+lftp> rm -ri diretorio-completo
+```
+
+**Mirror com delete (sincronização destrutiva):**
+```bash
+lftp> mirror -R --delete meu-tema wp-content/themes/meu-tema
+```
+- Apaga arquivos remotos que não existem localmente
+
+##### Apagar Tudo de um Diretório
+
+**lftp:**
+```bash
+lftp> cd wp-content/cache
+lftp> rm -r *
+```
+
+**Cuidado extremo:**
+```bash
+# PERIGOSO - Apaga TUDO do diretório atual
+lftp> glob rm -r *
+```
+
+---
+
+### Operações Avançadas
+
+#### Transferência Retomável (Resume)
+
+**lftp (suporta resume automático):**
+```bash
+lftp> get -c arquivo-grande.zip
+# -c = continue (retoma download interrompido)
+
+lftp> put -c arquivo-grande.zip
+# Retoma upload interrompido
+```
+
+#### Transferências em Background
+
+**lftp:**
+```bash
+lftp> get arquivo-grande.zip &
+# Transfere em background
+
+lftp> jobs
+# Lista jobs em background
+
+lftp> wait
+# Aguarda conclusão de todos os jobs
+```
+
+#### Transferências Paralelas
+
+**lftp mirror paralelo:**
+```bash
+lftp> mirror --parallel=4 wp-content/uploads backup-uploads
+# 4 downloads simultâneos
+```
+
+#### Script Batch FTP
+
+**Criar arquivo de comandos:**
+```bash
+cat > ftp-commands.txt << EOF
+user ftpuser senha
+binary
+cd wp-content/uploads
+put imagem1.jpg
+put imagem2.jpg
+put imagem3.jpg
+bye
+EOF
+```
+
+**Executar script:**
+```bash
+ftp -n nmatondo.42.fr < ftp-commands.txt
+```
+
+**lftp script:**
+```bash
+cat > ftp-script.lftp << EOF
+open -u ftpuser,senha ftp://nmatondo.42.fr
+cd wp-content/uploads
+mput *.jpg
+bye
+EOF
+
+lftp -f ftp-script.lftp
+```
+
+#### Navegação Rápida
+
+**lftp:**
+```bash
+lftp> cd wp-content/themes/meu-tema
+lftp> lcd ~/projetos/meu-tema  # Local cd
+lftp> pwd                       # Diretório remoto atual
+lftp> lpwd                      # Diretório local atual
+```
+
+**Bookmarks:**
+```bash
+lftp> bookmark add tema-dir
+lftp> bookmark list
+lftp> bookmark tema-dir
+```
+
+---
+
+### Exemplos Práticos WordPress
+
+#### 1. Instalar Tema WordPress via FTP
+
+```bash
+# Preparar tema
+cd ~/Downloads
+unzip meu-tema.zip
+
+# Conectar e fazer upload
+lftp -u ftpuser,senha ftp://nmatondo.42.fr
+
+# Upload do tema
+lftp> mirror -R meu-tema wp-content/themes/meu-tema
+
+# Verificar
+lftp> ls wp-content/themes/meu-tema
+
+# Ajustar permissões
+lftp> chmod -R 755 wp-content/themes/meu-tema
+
+lftp> bye
+```
+
+#### 2. Backup de wp-content
+
+```bash
+lftp -u ftpuser,senha ftp://nmatondo.42.fr
+
+# Download completo de wp-content
+lftp> mirror wp-content backup-wp-content-$(date +%Y%m%d)
+
+# Ou apenas uploads
+lftp> mirror wp-content/uploads backup-uploads
+
+lftp> bye
+```
+
+#### 3. Editar wp-config.php
+
+```bash
+lftp -u ftpuser,senha ftp://nmatondo.42.fr
+
+# Backup do arquivo original
+lftp> get wp-config.php -o wp-config-backup.php
+
+# Download para editar
+lftp> get wp-config.php
+
+# Editar localmente com seu editor favorito
+lftp> !nano wp-config.php
+
+# Upload do arquivo modificado
+lftp> put wp-config.php
+
+lftp> bye
+```
+
+#### 4. Limpar Cache WordPress
+
+```bash
+lftp -u ftpuser,senha ftp://nmatondo.42.fr
+
+# Apagar todos os arquivos de cache
+lftp> cd wp-content/cache
+lftp> rm -r *
+
+# Ou específicos
+lftp> rm wp-content/cache/*.tmp
+
+lftp> bye
+```
+
+#### 5. Atualizar Plugin Manualmente
+
+```bash
+# Download do plugin
+wget https://downloads.wordpress.org/plugin/meu-plugin.zip
+unzip meu-plugin.zip
+
+# Conectar FTP
+lftp -u ftpuser,senha ftp://nmatondo.42.fr
+
+# Backup do plugin antigo
+lftp> mirror wp-content/plugins/meu-plugin backup-meu-plugin
+
+# Apagar plugin antigo
+lftp> rm -r wp-content/plugins/meu-plugin
+
+# Upload plugin novo
+lftp> mirror -R meu-plugin wp-content/plugins/meu-plugin
+
+lftp> bye
+```
+
+#### 6. Upload de Múltiplas Imagens
+
+```bash
+lftp -u ftpuser,senha ftp://nmatondo.42.fr
+
+# Criar diretório do mês
+lftp> mkdir -p wp-content/uploads/2026/01
+
+# Navegar até lá
+lftp> cd wp-content/uploads/2026/01
+
+# Upload de todas as imagens
+lftp> lcd ~/imagens
+lftp> mput *.jpg *.png
+
+lftp> bye
+```
+
+---
+
+### Dicas de Segurança
+
+#### 1. Não Armazenar Senhas em Arquivos de Texto
+
+**Ruim:**
+```bash
+lftp -u ftpuser,minha_senha_123 ftp://nmatondo.42.fr
+```
+
+**Melhor (prompt de senha):**
+```bash
+lftp -u ftpuser ftp://nmatondo.42.fr
+# Pedirá senha interativamente
+```
+
+**Ou usar variável de ambiente:**
+```bash
+export FTP_PASSWORD=$(cat ../secrets/ftp_credentials.txt)
+lftp -u ftpuser,$FTP_PASSWORD ftp://nmatondo.42.fr
+```
+
+#### 2. Usar Conexões do Ambiente Docker
+
+**Do container WordPress:**
+```bash
+docker exec -it wordpress sh
+apk add lftp
+lftp -u ftpuser,senha ftp://ftp
+# Tráfego não sai da rede Docker
+```
+
+#### 3. Verificar Permissões Após Upload
+
+```bash
+lftp> ls -la wp-config.php
+-rw-r--r--  1 ftpuser ftpuser  2853 Jan 13 10:30 wp-config.php
+
+# Se necessário, ajustar
+lftp> chmod 644 wp-config.php
+```
+
+#### 4. Sempre Fazer Backup Antes de Modificar
+
+```bash
+# Antes de qualquer operação destrutiva
+lftp> get arquivo-importante.php -o arquivo-importante.backup.php
+# Ou
+lftp> mirror wp-content backup-$(date +%Y%m%d)
+```
+
+---
+
+### Comparação de Clientes FTP
+
+| Recurso | ftp nativo | lftp | FileZilla |
+|---------|-----------|------|-----------|
+| **Interface** | CLI | CLI | GUI |
+| **Resume** | ❌ | ✅ | ✅ |
+| **Mirror** | ❌ | ✅ | ✅ (sync) |
+| **Paralelo** | ❌ | ✅ | ✅ |
+| **Scripting** | Básico | Avançado | ❌ |
+| **Facilidade** | Difícil | Médio | Fácil |
+| **Automação** | ⚠️ | ✅ | ❌ |
+
+**Recomendação:**
+- **Iniciantes:** FileZilla (GUI intuitivo)
+- **Desenvolvedores:** lftp (poderoso, scriptável)
+- **Scripts/CI/CD:** lftp (automação)
+
+---
+
 ## Monitorização e Debug
 
 ### Verificar Status
