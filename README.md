@@ -551,6 +551,8 @@ AI assistance was utilized in the following aspects of this project:
 
 **1. Documentation and Research:**
 - Understanding Docker networking concepts
+- Understanding NGINX reverse proxy configuration
+- Understanding the Redis cache configuration
 - Researching Dockerfile best practices
 - Learning Docker secrets implementation
 
@@ -560,10 +562,8 @@ AI assistance was utilized in the following aspects of this project:
 - Fixing volume permission issues
 
 **3. Configuration Optimization:**
-- NGINX reverse proxy configuration
 - PHP-FPM pool optimization
 - MariaDB performance tuning
-- Redis cache configuration
 
 **4. Code Review:**
 - Reviewing Dockerfile efficiency
