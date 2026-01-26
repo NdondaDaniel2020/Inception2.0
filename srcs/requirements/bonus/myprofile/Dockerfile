@@ -1,4 +1,4 @@
-FROM alpine:3.23
+FROM alpine:3.22
 
 # Install busybox-extras for httpd
 RUN apk add --no-cache busybox-extras

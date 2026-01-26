@@ -1,4 +1,4 @@
-FROM alpine:3.23
+FROM alpine:3.22
 
 # Instalar PHP-FPM e extensões necessárias para WordPress
 RUN apk add --no-cache \

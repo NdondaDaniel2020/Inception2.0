@@ -334,7 +334,7 @@ Each Dockerfile uses Alpine Linux 3.23 as the base image:
 
 ```dockerfile
 # All services use Alpine 3.23
-FROM alpine:3.23
+:3.23
 
 # WordPress uses PHP 8.3
 RUN apk add --no-cache php83 php83-fpm ...
@@ -346,7 +346,7 @@ All services are built from Alpine Linux 3.23 without using pre-built Docker Hub
 
 ```dockerfile
 # All Dockerfiles start with:
-FROM alpine:3.23
+FROM alpine:3.22
 
 # Then install required packages:
 RUN apk add --no-cache nginx openssl  # NGINX
