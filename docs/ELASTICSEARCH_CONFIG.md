@@ -2,6 +2,8 @@
 
 Este documento fornece uma explicação detalhada de todas as configurações Elasticsearch utilizadas no projeto Inception, incluindo cluster, networking, segurança e integração com WordPress via ElasticPress.
 
+**Versão utilizada:** Elasticsearch latest em Alpine Linux 3.23
+
 ---
 
 ## Índice

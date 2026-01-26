@@ -3,6 +3,10 @@
 ## Visão Geral
 O arquivo `styles_.css` é responsável por toda a aparência visual da landing page. Ele transforma a estrutura HTML em uma experiência visual moderna, elegante e responsiva.
 
+**Servidor Web:** httpd do busybox-extras em Alpine Linux 3.23  
+**Porta:** 8888  
+**Tecnologias:** CSS3, Custom Properties (variáveis CSS), Flexbox, Grid
+
 ## Estrutura do CSS
 
 ### 1. **Reset e Configuração Básica**

@@ -2,6 +2,8 @@
 
 Este documento fornece uma explicação detalhada de todas as configurações Docker Compose utilizadas no projeto Inception, incluindo serviços, networking, volumes, secrets e dependências.
 
+**Sistema Base:** Todos os serviços utilizam Alpine Linux 3.23 como imagem base
+
 ---
 
 ## Índice

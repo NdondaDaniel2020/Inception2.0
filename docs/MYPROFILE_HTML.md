@@ -3,6 +3,10 @@
 ## Visão Geral
 O arquivo `index.html` é a estrutura principal da landing page, definindo todo o conteúdo semântico e hierarquia da página. Ele conta a história da jornada de Ndonda Daniel Matondo como desenvolvedor.
 
+**Servidor Web:** httpd do busybox-extras em Alpine Linux 3.23  
+**Porta:** 8888  
+**Tipo:** Website estático (HTML, CSS, JavaScript)
+
 ## Estrutura do Documento
 
 ### 1. **HEAD - Metadados e Configuração**

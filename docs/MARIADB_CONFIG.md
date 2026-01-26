@@ -2,6 +2,8 @@
 
 Este documento explica em detalhe todas as configurações e parâmetros utilizados no script de entrada (entrypoint) do MariaDB no projeto Inception.
 
+**Versão utilizada:** MariaDB latest em Alpine Linux 3.23
+
 ---
 
 ## Índice

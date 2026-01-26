@@ -2,6 +2,8 @@
 
 Este documento fornece uma explicação detalhada de todas as configurações Redis utilizadas no projeto Inception, incluindo networking, autenticação, persistência e segurança.
 
+**Versão utilizada:** Redis latest em Alpine Linux 3.23
+
 ---
 
 ## Índice

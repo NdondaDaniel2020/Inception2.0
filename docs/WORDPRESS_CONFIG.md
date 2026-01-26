@@ -4,6 +4,39 @@ Este documento explica em detalhe todas as configurações e parâmetros utiliza
 
 ---
 
+## Tecnologias Utilizadas
+
+### Stack WordPress
+
+| Componente | Versão | Descrição |
+|------------|--------|-----------|
+| **Sistema Base** | Alpine Linux 3.23 | Sistema operacional minimalista |
+| **PHP** | 8.3 | Linguagem de programação |
+| **PHP-FPM** | 8.3 | FastCGI Process Manager |
+| **WP-CLI** | Latest | Interface de linha de comando WordPress |
+| **MariaDB Client** | Latest (Alpine) | Cliente de conexão ao banco de dados |
+
+### Extensões PHP Instaladas
+
+O container WordPress inclui mais de 15 extensões PHP essenciais:
+
+```
+php83-fpm php83-mysqli php83-pdo php83-pdo_mysql
+php83-gd php83-intl php83-mbstring php83-xml php83-zip
+php83-opcache php83-curl php83-tokenizer php83-session php83-phar
+```
+
+**Funções principais:**
+- **php83-mysqli / pdo_mysql**: Conexão MariaDB
+- **php83-gd**: Manipulação de imagens
+- **php83-intl**: Internacionalização
+- **php83-mbstring**: Strings multibyte
+- **php83-xml**: Processamento XML
+- **php83-zip**: Compressão de arquivos
+- **php83-opcache**: Cache de bytecode para performance
+
+---
+
 ## Índice
 
 1. [PHP-FPM Configuration (www.conf)](#php-fpm-configuration-wwwconf)

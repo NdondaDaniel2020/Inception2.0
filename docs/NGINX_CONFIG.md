@@ -2,6 +2,8 @@
 
 Este documento fornece uma explicação detalhada de todas as configurações NGINX utilizadas no projeto Inception, incluindo SSL/TLS, reverse proxy, e integração com PHP-FPM.
 
+**Versão utilizada:** NGINX latest em Alpine Linux 3.23
+
 ---
 
 ## Índice

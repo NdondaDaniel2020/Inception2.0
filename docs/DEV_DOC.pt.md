@@ -118,7 +118,9 @@ Criar todos os ficheiros de secrets necessários com passwords seguras:
 openssl rand -base64 32 > secrets/db_root_password.txt
 openssl rand -base64 32 > secrets/db_password.txt
 openssl rand -base64 32 > secrets/redis_password.txt
-openssl rand -base64 16 > secrets/ftp_password.txt
+
+# Criar credenciais FTP (formato username:password)
+echo "ftpuser:$(openssl rand -base64 16)" > secrets/ftp_credentials.txt
 
 # Criar credenciais admin WordPress
 echo "admin:$(openssl rand -base64 16)" > secrets/credentials.txt
@@ -134,7 +136,7 @@ echo "secrets/" >> .gitignore
 Se usar bind mounts em vez de named volumes:
 
 ```bash
-mkdir -p /home/$USER/data/{mariadb,wordpress,redis,elasticsearch}
+mkdir -p /home/$USER/data/{mariadb,wordpress,redis,elasticsearch,myprofile}
 ```
 
 Atualizar `DATA_PATH` no Makefile:
@@ -184,7 +186,7 @@ Inception/
     ├── db_password.txt
     ├── credentials.txt
     ├── redis_password.txt
-    └── ftp_password.txt
+    └── ftp_credentials.txt
 ```
 
 ### Usar o Makefile

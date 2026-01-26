@@ -169,7 +169,7 @@ secrets/
 ├── db_password.txt           # Password da base de dados WordPress
 ├── credentials.txt           # Credenciais admin do WordPress
 ├── redis_password.txt        # Password de autenticação Redis
-└── ftp_password.txt          # Password do utilizador FTP
+└── ftp_credentials.txt       # Credenciais utilizador FTP (username:password)
 ```
 
 ⚠️ **Aviso de Segurança:** Nunca faça commit do diretório `secrets/` para controlo de versão!
@@ -198,8 +198,9 @@ cat secrets/redis_password.txt
 
 #### Credenciais FTP
 ```bash
-cat secrets/ftp_password.txt
+cat secrets/ftp_credentials.txt
 ```
+Formato: `username:password`
 
 ### Atualizar Credenciais
 

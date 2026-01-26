@@ -1,7 +1,7 @@
 # Configuração FTP - Documentação Técnica
 
 Este documento fornece uma explicação detalhada de todas as configurações FTP utilizadas no projeto Inception, incluindo o servidor vsftpd, configuração de usuários, permissões e integração com WordPress.
-
+**Versão utilizada:** vsftpd latest em Alpine Linux 3.23
 ---
 
 ## Índice

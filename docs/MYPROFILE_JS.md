@@ -3,6 +3,10 @@
 ## Visão Geral
 O arquivo `styles_.js` adiciona toda a interatividade e dinamismo à landing page. Ele controla animações, navegação suave, revelação de elementos ao scroll e validação de formulário.
 
+**Servidor Web:** httpd do busybox-extras em Alpine Linux 3.23  
+**Porta:** 8888  
+**Tecnologias:** JavaScript ES6+, Intersection Observer API, DOM Manipulation
+
 ## Estrutura do JavaScript
 
 ### 1. **NAVEGAÇÃO SUAVE (Smooth Scroll)**

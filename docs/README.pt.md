@@ -138,7 +138,7 @@ chmod 600 secrets/*.txt
 ### 5. Criar Diretórios de Dados
 
 ```bash
-mkdir -p /home/nmatondo/data/{mariadb,wordpress,redis,elasticsearch}
+mkdir -p /home/nmatondo/data/{mariadb,wordpress,redis,elasticsearch,myprofile}
 ```
 
 ---
@@ -182,7 +182,7 @@ Após iniciar os serviços, acesse-os via:
 |---------|-----|-------------|
 | **WordPress** | https://nmatondo.42.fr | Admin de secrets/credentials.txt |
 | **Adminer** | http://nmatondo.42.fr:8080 | Credenciais DB de .env |
-| **MyProfile** | https://nmatondo.42.fr/myprofile/ | Nenhuma (site estático) |
+| **MyProfile** | http://nmatondo.42.fr:8888 | Nenhuma (site estático) |
 | **FTP** | ftp://nmatondo.42.fr:21 | Credenciais FTP de secrets |
 | **Elasticsearch** | http://nmatondo.42.fr:9200 | Nenhuma |
 
