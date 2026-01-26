@@ -20,19 +20,19 @@ Inception is a comprehensive system administration project that demonstrates adv
 
 | Service | Technology | Purpose | Port |
 |---------|-----------|---------|------|
-| **NGINX** | Alpine 3.23 + NGINX | Reverse proxy with TLS 1.2/1.3 | 443 |
-| **WordPress** | Alpine 3.23 + PHP-FPM | Content Management System | 9000 (internal) |
-| **MariaDB** | Alpine 3.23 + MariaDB | Relational database | 3306 (internal) |
+| **NGINX** | Alpine 3.22  + NGINX | Reverse proxy with TLS 1.2/1.3 | 443 |
+| **WordPress** | Alpine 3.22  + PHP-FPM | Content Management System | 9000 (internal) |
+| **MariaDB** | Alpine 3.22  + MariaDB | Relational database | 3306 (internal) |
 
 #### Bonus Services
 
 | Service | Technology | Purpose | Port |
 |---------|-----------|---------|------|
-| **Redis** | Alpine 3.23 + Redis | In-memory cache for WordPress | 6379 (internal) |
-| **FTP** | Alpine 3.23 + vsftpd | File transfer server | 21, 21000-21010 |
-| **Adminer** | Alpine 3.23 + PHP | Database management interface | 8080 |
-| **Elasticsearch** | Alpine 3.23 + ES | Search and analytics engine | 9200, 9300 |
-| **MyProfile** | Alpine 3.23 + httpd | Static personal website | 8888 |
+| **Redis** | Alpine 3.22  + Redis | In-memory cache for WordPress | 6379 (internal) |
+| **FTP** | Alpine 3.22  + vsftpd | File transfer server | 21, 21000-21010 |
+| **Adminer** | Alpine 3.22  + PHP | Database management interface | 8080 |
+| **Elasticsearch** | Alpine 3.22  + ES | Search and analytics engine | 9200, 9300 |
+| **MyProfile** | Alpine 3.22  + httpd | Static personal website | 8888 |
 
 All services are built from **Alpine Linux 3.23** using custom Dockerfiles without pre-built application images from Docker Hub.
 
