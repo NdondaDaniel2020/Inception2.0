@@ -8,5 +8,8 @@ COPY ./site /var/www/myprofile
 
 WORKDIR /var/www/myprofile
 
+# Expor porta 8888
+EXPOSE 8888
+
 # httpd do busybox - servidor legítimo
 CMD ["httpd", "-f", "-v", "-p", "8888"]
