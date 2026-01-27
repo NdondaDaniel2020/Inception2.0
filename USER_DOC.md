@@ -126,7 +126,7 @@ Once the infrastructure is running, access the services through your web browser
   - Password: (see credentials section)
 
 #### Adminer (Database Administration)
-- **URL:** http://nmatondo.42.fr:8080
+- **URL:** http://nmatondo.42.fr:8080 or https://nmatondo.42.fr/adminer
 - **Description:** Web-based database management tool
 - **Login Credentials:**
   - System: `MySQL`
@@ -136,7 +136,7 @@ Once the infrastructure is running, access the services through your web browser
   - Database: `wordpress`
 
 #### Static Profile Website
-- **URL:** http://nmatondo.42.fr:8888
+- **URL:** http://nmatondo.42.fr:8888 or https://nmatondo.42.fr/myprofile
 - **Description:** Personal static website
 
 #### FTP Server
