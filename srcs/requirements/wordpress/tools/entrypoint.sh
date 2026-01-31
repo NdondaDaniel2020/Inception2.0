@@ -73,6 +73,46 @@ echo "✅ MariaDB está pronto!"
 # --------------------------------------------------
 if wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; then
     echo "ℹ️ WordPress já instalado"
+    # --------------------------------------------------
+    # Sincronizar senhas dos usuários do dump com secrets
+    # --------------------------------------------------
+    echo "🔐 Sincronizando senhas com secrets..."
+    if [ -f /run/secrets/credentials ] && [ "$(wc -l < /run/secrets/credentials)" -eq 4 ]; then
+        # Ler credenciais do secret
+        SECRET_ADMIN_USER="$(sed -n '1p' /run/secrets/credentials)"
+        SECRET_ADMIN_PASS="$(sed -n '2p' /run/secrets/credentials)"
+        SECRET_USER="$(sed -n '3p' /run/secrets/credentials)"
+        SECRET_USER_PASS="$(sed -n '4p' /run/secrets/credentials)"
+        
+        # Verificar e atualizar/criar usuário admin do dump (nmatondo)
+        if wp user get "$SECRET_ADMIN_USER" --allow-root --path=/var/www/html >/dev/null 2>&1; then
+            echo "   Atualizando senha do usuário: $SECRET_ADMIN_USER"
+            wp user update "$SECRET_ADMIN_USER" --user_pass="$SECRET_ADMIN_PASS" --allow-root --path=/var/www/html
+        else
+            echo "   Criando usuário: $SECRET_ADMIN_USER"
+            wp user create "$SECRET_ADMIN_USER" "${SECRET_ADMIN_USER}@student.42luanda.com" \
+                --role=administrator \
+                --user_pass="$SECRET_ADMIN_PASS" \
+                --allow-root \
+                --path=/var/www/html
+        fi
+        
+        # Verificar e atualizar/criar segundo usuário do dump (ndonda)
+        if wp user get "$SECRET_USER" --allow-root --path=/var/www/html >/dev/null 2>&1; then
+            echo "   Atualizando senha do usuário: $SECRET_USER"
+            wp user update "$SECRET_USER" --user_pass="$SECRET_USER_PASS" --allow-root --path=/var/www/html
+        else
+            echo "   Criando usuário: $SECRET_USER"
+            wp user create "$SECRET_USER" "${SECRET_USER}@student.42luanda.com" \
+                --role=author \
+                --user_pass="$SECRET_USER_PASS" \
+                --allow-root \
+                --path=/var/www/html
+        fi
+        
+        echo "✅ Senhas sincronizadas com sucesso!"
+    fi
+
 else
     echo "📦 Instalando WordPress..."
 
