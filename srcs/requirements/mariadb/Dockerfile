@@ -11,6 +11,8 @@ RUN sed -i 's/skip-networking/#skip-networking/' /etc/my.cnf.d/mariadb-server.cn
 
 COPY ./conf/dump.sql /docker-entrypoint-initdb.d/
 
+RUN chown -R mysql:mysql /docker-entrypoint-initdb.d
+
 COPY ./tools/entrypoint.sh /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/entrypoint.sh

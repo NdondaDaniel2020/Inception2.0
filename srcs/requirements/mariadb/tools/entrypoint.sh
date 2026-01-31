@@ -8,7 +8,7 @@ MARIADB_PASSWORD=$(cat /run/secrets/db_password)
 # Se é a primeira vez, inicializar o banco
 if [ ! -d "/var/lib/mysql/${MARIADB_DATABASE}" ]; then
     echo "📦 First run - Initializing database..."
-    
+
     # Iniciar MariaDB temporariamente
     mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking --skip-grant-tables &
     pid=$!
@@ -18,7 +18,10 @@ if [ ! -d "/var/lib/mysql/${MARIADB_DATABASE}" ]; then
         mysqladmin ping --silent 2>/dev/null && break
         sleep 1
     done
-    
+
+    # Ajustar dump.sql para o domínio correto
+    sed -i "s/nmatondo.42.fr/${DOMAIN_NAME}/g" /docker-entrypoint-initdb.d/dump.sql
+
     # Configurar usuários e database
     echo "📥 Configuring users and database..."
     mariadb <<-EOSQL
@@ -31,7 +34,7 @@ if [ ! -d "/var/lib/mysql/${MARIADB_DATABASE}" ]; then
 		GRANT ALL PRIVILEGES ON ${MARIADB_DATABASE}.* TO '${MARIADB_USER}'@'%';
 		FLUSH PRIVILEGES;
 	EOSQL
-    
+
     # Importar dump no database correto
     echo "📥 Importing dump.sql..."
     {
