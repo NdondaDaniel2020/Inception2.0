@@ -1,5 +1,6 @@
 # Secrets - NUNCA commitar senhas reais
 secrets/*.txt
+.vscode/
 
 # Environment - NUNCA commitar .env com senhas reais
 srcs/.env
