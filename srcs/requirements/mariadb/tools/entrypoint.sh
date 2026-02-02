@@ -9,22 +9,12 @@ MARIADB_PASSWORD=$(cat /run/secrets/db_password)
 if [ ! -d "/var/lib/mysql/${MARIADB_DATABASE}" ]; then
     echo "📦 First run - Initializing database..."
 
-    # Iniciar MariaDB temporariamente
-    mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking --skip-grant-tables &
-    pid=$!
-
-    # Aguardar inicialização
-    for i in $(seq 30); do
-        mysqladmin ping --silent 2>/dev/null && break
-        sleep 1
-    done
-
     # Ajustar dump.sql para o domínio correto
     sed -i "s/nmatondo.42.fr/${DOMAIN_NAME}/g" /docker-entrypoint-initdb.d/dump.sql
 
-    # Configurar usuários e database
+    # Criar script SQL completo
     echo "📥 Configuring users and database..."
-    mariadb <<-EOSQL
+    cat > /tmp/init.sql <<-EOF
 		FLUSH PRIVILEGES;
 		ALTER USER 'root'@'localhost' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}';
 		CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}';
@@ -33,20 +23,18 @@ if [ ! -d "/var/lib/mysql/${MARIADB_DATABASE}" ]; then
 		CREATE USER IF NOT EXISTS '${MARIADB_USER}'@'%' IDENTIFIED BY '${MARIADB_PASSWORD}';
 		GRANT ALL PRIVILEGES ON ${MARIADB_DATABASE}.* TO '${MARIADB_USER}'@'%';
 		FLUSH PRIVILEGES;
-	EOSQL
+		USE ${MARIADB_DATABASE};
+	EOF
 
-    # Importar dump no database correto
+    # Importar dump no script SQL
     echo "📥 Importing dump.sql..."
-    {
-        echo "USE ${MARIADB_DATABASE};"
-        cat /docker-entrypoint-initdb.d/dump.sql
-    } | mariadb
+    cat /docker-entrypoint-initdb.d/dump.sql >> /tmp/init.sql
+
+    # Executar tudo de uma vez em modo bootstrap (sem background process)
+    mysqld --user=mysql --bootstrap < /tmp/init.sql
+    rm -f /tmp/init.sql
     
     echo "✅ Database initialized!"
-    
-    # Parar MariaDB temporário
-    kill $pid
-    wait $pid
 fi
 
 # Iniciar MariaDB em foreground
