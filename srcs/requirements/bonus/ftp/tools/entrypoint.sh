@@ -1,14 +1,17 @@
 #!/bin/sh
 
-# Cria usuário FTP se não existir
+# Cria grupo www-data se não existir (mesmo GID do WordPress)
+addgroup -g 82 -S www-data 2>/dev/null || true
+
+# Cria usuário FTP se não existir (com mesmo UID/GID do WordPress)
 if ! id -u ${FTP_USER} >/dev/null 2>&1; then
-    adduser -D -h /var/www/html ${FTP_USER}
+    adduser -u 82 -D -h /var/www/html -G www-data ${FTP_USER}
     FTP_PASSWORD=$(cat /run/secrets/ftp_credentials)
     echo "${FTP_USER}:${FTP_PASSWORD}" | chpasswd
 fi
 
-# Ajusta permissões do diretório WordPress
-chown -R ${FTP_USER}:${FTP_USER} /var/www/html
+# Garantir permissões corretas (mantém www-data como dono)
+chown -R www-data:www-data /var/www/html
 chmod -R 755 /var/www/html
 
 # Inicia vsftpd
