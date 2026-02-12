@@ -193,12 +193,12 @@ After starting the services, access them via:
 ### Core Technologies
 
 - **Base OS**: Alpine Linux 3.22 (all containers)
-- **Web Server**: NGINX (latest Alpine)
+- **Web Server**: NGINX (3.22 Alpine)
 - **Programming Language**: PHP 8.3 with 15+ extensions
-- **Database**: MariaDB (latest Alpine)
-- **Cache**: Redis (latest Alpine)
-- **FTP Server**: vsftpd (latest Alpine)
-- **Search Engine**: Elasticsearch (latest Alpine)
+- **Database**: MariaDB (3.22 Alpine)
+- **Cache**: Redis (3.22 Alpine)
+- **FTP Server**: vsftpd (3.22 Alpine)
+- **Search Engine**: Elasticsearch (3.22 Alpine)
 - **Static Web Server**: httpd from busybox-extras
 - **Database Admin**: Adminer (single PHP file)
 
