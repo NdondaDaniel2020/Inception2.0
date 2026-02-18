@@ -18,7 +18,6 @@ RUN apk add --no-cache \
     php83-session \
     php83-phar \
     php83-pecl-redis \
-    bash \
     mariadb-client \
     netcat-openbsd \
     curl \
@@ -40,11 +39,9 @@ RUN ln -sf /usr/bin/php83 /usr/bin/php
 # Diretório padrão do WordPress
 WORKDIR /var/www/html
 
-# Copiar WordPress para diretório temporário (será copiado para volume no entrypoint)
-COPY organic/ /tmp/wordpress-organic/
-
-# Configuração do PHP-FPM (caminho correto para Alpine)
+# Configuração do PHP-FPM e PHP (caminho correto para Alpine)
 COPY ./conf/www.conf /etc/php83/php-fpm.d/www.conf
+COPY ./conf/php.ini /etc/php83/conf.d/custom.ini
 
 # Script de entrada
 COPY ./tools/entrypoint.sh /usr/local/bin/

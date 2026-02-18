@@ -48,36 +48,11 @@ else
 fi
 
 # --------------------------------------------------
-# C opiar arquivos do organic se volume estiver vazio
+# Criar diretório se não existir
 # --------------------------------------------------
-if [ ! -f /var/www/html/wp-load.php ]; then
-    echo "📁 Volume vazio detectado - Copiando site organic..."
-    cp -a /tmp/wordpress-organic/* /var/www/html/
-    chown -R www-data:www-data /var/www/html
-    echo "✅ Site organic copiado para o volume"
-fi
-
-# --------------------------------------------------
-# Criar wp-config.php ANTES de qualquer wp-cli
-# --------------------------------------------------
-if [ -f /var/www/html/wp-config-docker.php ]; then
-    echo "📝 Gerando wp-config.php..."
-    cp -f /var/www/html/wp-config-docker.php /var/www/html/wp-config.php
-
-    if [ -f /var/www/html/wp-content/object-cache.php ]; then
-        echo "   Removendo object-cache.php (Redis não disponível)..."
-        rm -f /var/www/html/wp-content/object-cache.php
-    fi
-
-    if [ "$REDIS_AVAILABLE" = true ]; then
-        # Substituir placeholder da senha Redis
-        if [ -n "$REDIS_PASSWORD" ]; then
-            sed -i "s/REDIS_PASSWORD_PLACEHOLDER/$REDIS_PASSWORD/g" /var/www/html/wp-config.php
-        fi
-    else
-        # Remover configuração Redis do wp-config.php
-        sed -i '/Redis Cache Configuration/,/define.*WP_REDIS_PASSWORD/d' /var/www/html/wp-config.php
-    fi
+if [ ! -d /var/www/html ]; then
+    mkdir -p /var/www/html
+    chown www-data:www-data /var/www/html
 fi
 
 # --------------------------------------------------
@@ -107,74 +82,105 @@ echo "✅ MariaDB está pronto!"
 # --------------------------------------------------
 # Instalar WordPress se necessário
 # --------------------------------------------------
-if wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; then
-    echo "ℹ️ WordPress já instalado (organic)"
-    # --------------------------------------------------
-    # Sincronizar senhas dos usuários do dump com secrets
-    # --------------------------------------------------
-    echo "🔐 Sincronizando senhas com secrets..."
-
+if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; then
+    echo "📦 Instalando WordPress..."
+    
+    # Ler credenciais do secret
     if [ -f /run/secrets/credentials ]; then
-        # Ler credenciais do secret
-        SECRET_ADMIN_USER="$(sed -n '1p' /run/secrets/credentials)"
-        SECRET_ADMIN_PASS="$(sed -n '2p' /run/secrets/credentials)"
-        SECRET_USER="$(sed -n '3p' /run/secrets/credentials)"
-        SECRET_USER_PASS="$(sed -n '4p' /run/secrets/credentials)"
-
-        # Verificar e atualizar/criar usuário admin do dump (nmatondo)
-        if wp user get "$SECRET_ADMIN_USER" --allow-root --path=/var/www/html >/dev/null 2>&1; then
-            echo "   Atualizando senha do usuário: $SECRET_ADMIN_USER"
-            wp user update "$SECRET_ADMIN_USER" --user_pass="$SECRET_ADMIN_PASS" --allow-root --path=/var/www/html
-        else
-            echo "   Criando usuário: $SECRET_ADMIN_USER"
-            wp user create "$SECRET_ADMIN_USER" "${SECRET_ADMIN_USER}@student.42luanda.com" \
-                --role=administrator \
-                --user_pass="$SECRET_ADMIN_PASS" \
-                --allow-root \
-                --path=/var/www/html
-        fi
+        ADMIN_USER="$(sed -n '1p' /run/secrets/credentials)"
+        ADMIN_EMAIL="$(sed -n '2p' /run/secrets/credentials)"
+        AUTHOR_USER="$(sed -n '3p' /run/secrets/credentials)"
+        AUTHOR_EMAIL="$(sed -n '4p' /run/secrets/credentials)"
+    else
+        ADMIN_USER="admin"
+        ADMIN_EMAIL="admin@${DOMAIN_NAME}"
+        AUTHOR_USER=""
+        AUTHOR_EMAIL=""
+    fi
+    
+    # Senha vem do db_password
+    if [ -f /run/secrets/db_password ]; then
+        USER_PASS="$(cat /run/secrets/db_password)"
+    else
+        USER_PASS="changeme"
+    fi
+    
+    # Baixar WordPress core se necessário
+    if [ ! -f /var/www/html/wp-load.php ]; then
+        echo "📥 Baixando WordPress..."
+        wp core download --allow-root --path=/var/www/html
+    fi
+    
+    # Criar wp-config.php se não existir
+    if [ ! -f /var/www/html/wp-config.php ]; then
+        echo "📝 Criando wp-config.php..."
+        wp config create \
+            --dbname="$WORDPRESS_DB_NAME" \
+            --dbuser="$WORDPRESS_DB_USER" \
+            --dbpass="$WORDPRESS_DB_PASSWORD" \
+            --dbhost="$WORDPRESS_DB_HOST" \
+            --locale=pt_PT \
+            --allow-root \
+            --path=/var/www/html
         
-        # Verificar e atualizar/criar segundo usuário do dump (ndonda)
-        if wp user get "$SECRET_USER" --allow-root --path=/var/www/html >/dev/null 2>&1; then
-            echo "   Atualizando senha do usuário: $SECRET_USER"
-            wp user update "$SECRET_USER" --user_pass="$SECRET_USER_PASS" --allow-root --path=/var/www/html
-        else
-            echo "   Criando usuário: $SECRET_USER"
-            wp user create "$SECRET_USER" "${SECRET_USER}@student.42luanda.com" \
-                --role=author \
-                --user_pass="$SECRET_USER_PASS" \
-                --allow-root \
-                --path=/var/www/html
+        # Adicionar configurações do Redis se disponível
+        if [ "$REDIS_AVAILABLE" = true ]; then
+            echo "   Adicionando configurações do Redis..."
+            cat >> /var/www/html/wp-config.php <<-'EOF'
+				
+				/* Redis Cache Configuration */
+				define('WP_REDIS_HOST', getenv('WP_REDIS_HOST') ?: 'redis');
+				define('WP_REDIS_PORT', getenv('WP_REDIS_PORT') ?: 6379);
+				define('WP_REDIS_PASSWORD', getenv('WP_REDIS_PASSWORD') ?: '');
+				define('WP_REDIS_DATABASE', 0);
+				define('WP_CACHE_KEY_SALT', getenv('DOMAIN_NAME') ?: 'wordpress');
+				EOF
         fi
-        
-        echo "✅ Senhas sincronizadas com sucesso!"
+    fi
+    
+    # Instalar WordPress
+    echo "🚀 Instalando WordPress..."
+    wp core install \
+        --url="https://${DOMAIN_NAME}" \
+        --title="Organic Store" \
+        --admin_user="$ADMIN_USER" \
+        --admin_password="$USER_PASS" \
+        --admin_email="$ADMIN_EMAIL" \
+        --allow-root \
+        --path=/var/www/html
+    
+    echo "✅ WordPress instalado!"
+    
+    # Instalar e ativar tema Astra
+    echo "🎨 Instalando tema Astra..."
+    wp theme install astra --activate --allow-root --path=/var/www/html
+    
+    # Instalar plugins essenciais para Organic Store
+    echo "📦 Instalando plugins..."
+    
+    # WooCommerce (loja online)
+    wp plugin install woocommerce --activate --allow-root --path=/var/www/html
+    
+    # Elementor (page builder usado pelo Astra)
+    wp plugin install elementor --activate --allow-root --path=/var/www/html
+    
+    # Starter Templates (para importar demos do Astra)
+    wp plugin install astra-sites --activate --allow-root --path=/var/www/html
+    
+    echo "✅ Instalação básica completa!"
+    echo "ℹ️  Acesse https://${DOMAIN_NAME}/wp-admin para importar o template Organic Store"
+    
+    # Criar segundo usuário se definido
+    if [ -n "$AUTHOR_USER" ] && [ "$AUTHOR_USER" != "$ADMIN_USER" ]; then
+        echo "👤 Criando usuário autor: $AUTHOR_USER"
+        wp user create "$AUTHOR_USER" "$AUTHOR_EMAIL" \
+            --role=author \
+            --user_pass="$USER_PASS" \
+            --allow-root \
+            --path=/var/www/html 2>/dev/null || true
     fi
 else
-    echo "⚠️ WordPress não detectado no banco - Aguardando importação do dump..."
-    # O organic já foi copiado pelo Dockerfile
-    # O dump.sql do MariaDB já criou as tabelas
-    # Apenas aguardar alguns segundos para garantir
-    sleep 5
-    
-    # Tentar novamente
-    if wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; then
-        echo "✅ WordPress detectado após importação do dump!"
-        
-        # Sincronizar senhas
-        if [ -f /run/secrets/credentials ]; then
-            SECRET_ADMIN_USER="$(sed -n '1p' /run/secrets/credentials)"
-            SECRET_ADMIN_PASS="$(sed -n '2p' /run/secrets/credentials)"
-            SECRET_USER="$(sed -n '3p' /run/secrets/credentials)"
-            SECRET_USER_PASS="$(sed -n '4p' /run/secrets/credentials)"
-
-            # Atualizar senhas dos usuários existentes no dump
-            echo "🔐 Atualizando senhas dos usuários do dump..."
-            wp user update "$SECRET_ADMIN_USER" --user_pass="$SECRET_ADMIN_PASS" --allow-root --path=/var/www/html 2>/dev/null || echo "   ⚠️ Usuário $SECRET_ADMIN_USER não encontrado"
-            wp user update "$SECRET_USER" --user_pass="$SECRET_USER_PASS" --allow-root --path=/var/www/html 2>/dev/null || echo "   ⚠️ Usuário $SECRET_USER não encontrado"
-        fi
-    else
-        echo "❌ WordPress ainda não detectado - Verifique o dump do MariaDB"
-    fi
+    echo "ℹ️  WordPress já instalado"
 fi
 
 # --------------------------------------------------

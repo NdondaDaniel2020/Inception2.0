@@ -33,7 +33,9 @@ fclean: clean
 	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
 	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true
 	@docker network rm $$(docker network ls -q) 2>/dev/null || true
-	@rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis $(DATA_PATH)/elasticsearch 2>/dev/null || true
+	@echo "🗑️  Removing persistent data directories..."
+	@sudo rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis $(DATA_PATH)/elasticsearch $(DATA_PATH)/myprofile 2>/dev/null || true
+	@echo "✅ All data removed!"
 
 logs:
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) logs -f
