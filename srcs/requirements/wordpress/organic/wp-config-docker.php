@@ -94,9 +94,9 @@ define( 'WP_HOME', 'https://' . (getenv('DOMAIN_NAME') ?: 'nmatondo.42.fr') );
 define( 'WP_SITEURL', 'https://' . (getenv('DOMAIN_NAME') ?: 'nmatondo.42.fr') );
 
 /* Redis Cache Configuration */
-define('WP_CACHE', true);
-define('WP_REDIS_HOST', 'redis');
-define('WP_REDIS_PORT', 6379);
+define('WP_CACHE', (getenv('WP_CACHE') ?: true));
+define('WP_REDIS_HOST', (getenv('WP_REDIS_HOST') ?: 'redis'));
+define('WP_REDIS_PORT', (getenv('WP_REDIS_PORT') ?: 6379));
 define('WP_REDIS_PASSWORD', 'REDIS_PASSWORD_PLACEHOLDER');
 
 /* That's all, stop editing! Happy publishing. */

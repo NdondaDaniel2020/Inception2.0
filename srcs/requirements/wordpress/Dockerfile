@@ -17,8 +17,10 @@ RUN apk add --no-cache \
     php83-tokenizer \
     php83-session \
     php83-phar \
+    php83-pecl-redis \
     bash \
     mariadb-client \
+    netcat-openbsd \
     curl \
     less
 
