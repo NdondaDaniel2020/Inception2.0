@@ -151,21 +151,11 @@ if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; the
     
     echo "✅ WordPress instalado!"
     
-    # Instalar e ativar tema Astra
-    echo "🎨 Instalando tema Astra..."
-    wp theme install astra --activate --allow-root --path=/var/www/html
-    
-    # Instalar plugins essenciais para Organic Store
+    # Instalar plugins essenciais
     echo "📦 Instalando plugins..."
-    
-    # WooCommerce (loja online)
-    wp plugin install woocommerce --activate --allow-root --path=/var/www/html
-    
-    # Elementor (page builder usado pelo Astra)
-    wp plugin install elementor --activate --allow-root --path=/var/www/html
-    
-    # Starter Templates (para importar demos do Astra)
-    wp plugin install astra-sites --activate --allow-root --path=/var/www/html
+
+    # Gutenberg (editor de blocos moderno)
+    wp plugin install gutenberg --activate --allow-root --path=/var/www/html
     
     echo "✅ Instalação básica completa!"
     echo "ℹ️  Acesse https://${DOMAIN_NAME}/wp-admin para importar o template Organic Store"
