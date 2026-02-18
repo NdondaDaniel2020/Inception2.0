@@ -40,8 +40,8 @@ RUN ln -sf /usr/bin/php83 /usr/bin/php
 # Diretório padrão do WordPress
 WORKDIR /var/www/html
 
-# Copiar WordPress (teu site)
-COPY organic/ /var/www/html/
+# Copiar WordPress para diretório temporário (será copiado para volume no entrypoint)
+COPY organic/ /tmp/wordpress-organic/
 
 # Configuração do PHP-FPM (caminho correto para Alpine)
 COPY ./conf/www.conf /etc/php83/php-fpm.d/www.conf
