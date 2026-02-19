@@ -38,7 +38,9 @@ All services are built from **Alpine Linux 3.22** using custom Dockerfiles witho
 
 ---
 
-## 📋 Prerequisites
+## Instructions
+
+### 📋 Prerequisites
 
 Before starting, ensure you have the following installed:
 
@@ -59,18 +61,16 @@ docker compose version    # Should show v2.0+
 make --version           # Should show 4.0+
 ```
 
----
+### 🚀 Installation
 
-## 🚀 Installation
-
-### 1. Clone the Repository
+#### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd Inception
 ```
 
-### 2. Configure Domain Name
+#### 2. Configure Domain Name
 
 Add the domain to your hosts file:
 
@@ -87,7 +87,7 @@ sudo nano /etc/hosts
 127.0.0.1    nmatondo.42.fr
 ```
 
-### 3. Configure Environment Variables
+#### 3. Configure Environment Variables
 
 Create `srcs/.env` file:
 
@@ -117,7 +117,7 @@ FTP_USER=ftpuser
 REDIS_HOST=redis:6379
 ```
 
-### 4. Set Up Secrets
+#### 4. Set Up Secrets
 
 Create the `secrets/` directory and populate with password files:
 
@@ -135,17 +135,15 @@ echo "ftpuser:your_ftp_password" > secrets/ftp_credentials.txt
 chmod 600 secrets/*.txt
 ```
 
-### 5. Create Data Directories
+#### 5. Create Data Directories
 
 ```bash
 mkdir -p /home/nmatondo/data/{mariadb,wordpress,redis,elasticsearch,myprofile}
 ```
 
----
+### 🎮 Usage
 
-## 🎮 Usage
-
-### Quick Start
+#### Quick Start
 
 **Start mandatory services only (NGINX, WordPress, MariaDB):**
 ```bash
@@ -157,7 +155,7 @@ make
 make bonus
 ```
 
-### Available Commands
+#### Available Commands
 
 | Command | Description |
 |---------|-------------|
@@ -174,7 +172,7 @@ make bonus
 | `make re` | Rebuild mandatory services from scratch |
 | `make bre` | Rebuild bonus services from scratch |
 
-### Access Points
+#### Access Points
 
 After starting the services, access them via:
 
@@ -576,3 +574,4 @@ AI assistance was utilized in the following aspects of this project:
 
 **Last Updated:** January 2026  
 **Project Status:** ✅ Complete and Functional
+
