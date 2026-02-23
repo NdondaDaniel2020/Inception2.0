@@ -14,6 +14,7 @@ RUN apk add --no-cache \
     php83-zip \
     php83-opcache \
     php83-curl \
+    php83-ctype \
     php83-tokenizer \
     php83-session \
     php83-phar \

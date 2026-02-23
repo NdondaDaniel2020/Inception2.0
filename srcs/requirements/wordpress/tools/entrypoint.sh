@@ -28,6 +28,7 @@ REDIS_AVAILABLE=false
 
 if [ "$WP_CACHE" = "true" ]; then
     echo "🔍 WP_CACHE habilitado - Verificando disponibilidade do Redis..."
+    REDIS_AVAILABLE=true
     
     REDIS_HOST="${WP_REDIS_HOST:-redis}"
     REDIS_PORT="${WP_REDIS_PORT:-6379}"
@@ -39,9 +40,11 @@ if [ "$WP_CACHE" = "true" ]; then
     # Ler senha do Redis via Docker Secret
     if [ -f /run/secrets/redis_password ]; then
         export REDIS_PASSWORD="$(cat /run/secrets/redis_password)"
+        export WP_REDIS_PASSWORD="$REDIS_PASSWORD"
     else
         echo "⚠️  Secret redis_password não encontrado - Redis sem senha"
         export REDIS_PASSWORD=""
+        export WP_REDIS_PASSWORD=""
     fi
 else
     echo "ℹ️  WP_CACHE desabilitado - WordPress funcionará sem cache Redis"
@@ -87,15 +90,35 @@ if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; the
     
     # Ler credenciais do secret
     if [ -f /run/secrets/credentials ]; then
-        ADMIN_USER="$(sed -n '1p' /run/secrets/credentials)"
-        ADMIN_EMAIL="$(sed -n '2p' /run/secrets/credentials)"
-        AUTHOR_USER="$(sed -n '3p' /run/secrets/credentials)"
-        AUTHOR_EMAIL="$(sed -n '4p' /run/secrets/credentials)"
+        CREDENTIALS_LINE_1="$(sed -n '1p' /run/secrets/credentials)"
+
+        # Formato recomendado: username:password
+        if echo "$CREDENTIALS_LINE_1" | grep -q ':'; then
+            ADMIN_USER="$(echo "$CREDENTIALS_LINE_1" | cut -d: -f1)"
+            ADMIN_PASSWORD="$(echo "$CREDENTIALS_LINE_1" | cut -d: -f2-)"
+            ADMIN_EMAIL="${WP_ADMIN_EMAIL:-admin@${DOMAIN_NAME}}"
+            AUTHOR_USER=""
+            AUTHOR_EMAIL=""
+            AUTHOR_PASSWORD=""
+        else
+            # Compatibilidade legada: múltiplas linhas
+            ADMIN_USER="$CREDENTIALS_LINE_1"
+            ADMIN_EMAIL="$(sed -n '2p' /run/secrets/credentials)"
+            AUTHOR_USER="$(sed -n '3p' /run/secrets/credentials)"
+            AUTHOR_EMAIL="$(sed -n '4p' /run/secrets/credentials)"
+            ADMIN_PASSWORD="$(sed -n '5p' /run/secrets/credentials)"
+            AUTHOR_PASSWORD="$(sed -n '6p' /run/secrets/credentials)"
+
+            [ -n "$ADMIN_PASSWORD" ] || ADMIN_PASSWORD="$ADMIN_EMAIL"
+            [ -n "$AUTHOR_PASSWORD" ] || AUTHOR_PASSWORD="$AUTHOR_EMAIL"
+        fi
     else
         ADMIN_USER="admin"
+        ADMIN_PASSWORD="admin123"
         ADMIN_EMAIL="admin@${DOMAIN_NAME}"
         AUTHOR_USER=""
         AUTHOR_EMAIL=""
+        AUTHOR_PASSWORD=""
     fi
     
     # Baixar WordPress core se necessário
@@ -116,19 +139,6 @@ if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; the
             --allow-root \
             --path=/var/www/html
         
-        # Adicionar configurações do Redis se disponível
-        if [ "$REDIS_AVAILABLE" = true ]; then
-            echo "   Adicionando configurações do Redis..."
-            cat >> /var/www/html/wp-config.php <<-'EOF'
-				
-				/* Redis Cache Configuration */
-				define('WP_REDIS_HOST', getenv('WP_REDIS_HOST') ?: 'redis');
-				define('WP_REDIS_PORT', getenv('WP_REDIS_PORT') ?: 6379);
-				define('WP_REDIS_PASSWORD', getenv('WP_REDIS_PASSWORD') ?: '');
-				define('WP_REDIS_DATABASE', 0);
-				define('WP_CACHE_KEY_SALT', getenv('DOMAIN_NAME') ?: 'wordpress');
-				EOF
-        fi
     fi
     
     # Instalar WordPress
@@ -137,7 +147,7 @@ if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; the
         --url="https://${DOMAIN_NAME}" \
         --title="Organic Store" \
         --admin_user="$ADMIN_USER" \
-        --admin_password="$ADMIN_EMAIL" \
+        --admin_password="$ADMIN_PASSWORD" \
         --admin_email="$ADMIN_EMAIL" \
         --allow-root \
         --path=/var/www/html
@@ -158,12 +168,34 @@ if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; the
         echo "👤 Criando usuário autor: $AUTHOR_USER"
         wp user create "$AUTHOR_USER" "$AUTHOR_EMAIL" \
             --role=author \
-            --user_pass="$AUTHOR_EMAIL" \
+            --user_pass="$AUTHOR_PASSWORD" \
             --allow-root \
             --path=/var/www/html 2>/dev/null || true
     fi
 else
     echo "ℹ️  WordPress já instalado"
+fi
+
+# Garantir configurações Redis no wp-config.php quando WP_CACHE estiver habilitado
+if [ "$WP_CACHE" = "true" ] && [ -f /var/www/html/wp-config.php ]; then
+    echo "   Normalizando constantes de cache no wp-config.php..."
+
+    # Limpar possíveis definições duplicadas inseridas manualmente
+    sed -i "/define('WP_CACHE', true);/d" /var/www/html/wp-config.php
+    sed -i "/define('WP_REDIS_HOST'/d" /var/www/html/wp-config.php
+    sed -i "/define('WP_REDIS_PORT'/d" /var/www/html/wp-config.php
+    sed -i "/define('WP_REDIS_PASSWORD'/d" /var/www/html/wp-config.php
+    sed -i "/define('WP_REDIS_DATABASE'/d" /var/www/html/wp-config.php
+    sed -i "/define('WP_CACHE_KEY_SALT'/d" /var/www/html/wp-config.php
+    sed -i "/define( 'WP_CACHE_KEY_SALT'/d" /var/www/html/wp-config.php
+
+    # Recriar constantes de forma idempotente e no local correto
+    wp config set WP_CACHE true --raw --type=constant --allow-root --path=/var/www/html
+    wp config set WP_REDIS_HOST "${WP_REDIS_HOST:-redis}" --type=constant --allow-root --path=/var/www/html
+    wp config set WP_REDIS_PORT "${WP_REDIS_PORT:-6379}" --raw --type=constant --allow-root --path=/var/www/html
+    wp config set WP_REDIS_PASSWORD "$WP_REDIS_PASSWORD" --type=constant --allow-root --path=/var/www/html
+    wp config set WP_REDIS_DATABASE 0 --raw --type=constant --allow-root --path=/var/www/html
+    wp config set WP_CACHE_KEY_SALT "${DOMAIN_NAME:-wordpress}" --type=constant --allow-root --path=/var/www/html
 fi
 
 # --------------------------------------------------
@@ -207,7 +239,26 @@ if [ "$WP_CACHE" = true ]; then
 
         # Habilitar o Object Cache drop-in
         echo "   Habilitando Redis Object Cache..."
-        wp redis enable --allow-root --path=/var/www/html 2>/dev/null || echo "   :warning: Object cache será habilitado via admin"
+        ENABLE_RETRIES=5
+        ENABLE_COUNT=0
+        ENABLED=false
+
+        while [ $ENABLE_COUNT -lt $ENABLE_RETRIES ]; do
+            if wp redis enable --allow-root --path=/var/www/html >/dev/null 2>&1; then
+                ENABLED=true
+                break
+            fi
+
+            ENABLE_COUNT=$((ENABLE_COUNT+1))
+            echo "   Redis ainda não pronto para object cache... ($ENABLE_COUNT/$ENABLE_RETRIES)"
+            sleep 2
+        done
+
+        if [ "$ENABLED" = true ]; then
+            echo "   ✅ Object cache habilitado"
+        else
+            echo "   :warning: Object cache será habilitado via admin"
+        fi
 
         # Verificar status do Redis
         echo "   Verificando conexão com Redis..."
@@ -269,7 +320,8 @@ if [ -n "$ELASTICSEARCH_HOST" ]; then
         
         # Configurar host do Elasticsearch
         echo "   Configurando host Elasticsearch: http://${ELASTICSEARCH_HOST}"
-        wp elasticpress set-host "http://${ELASTICSEARCH_HOST}" --allow-root --path=/var/www/html 2>/dev/null || true
+        wp config set EP_HOST "http://${ELASTICSEARCH_HOST}" --type=constant --allow-root --path=/var/www/html >/dev/null 2>&1 || true
+        wp option update ep_host "http://${ELASTICSEARCH_HOST}" --allow-root --path=/var/www/html >/dev/null 2>&1 || true
         
         # Ativar funcionalidades do ElasticPress
         echo "   Ativando funcionalidades ElasticPress..."
@@ -280,8 +332,14 @@ if [ -n "$ELASTICSEARCH_HOST" ]; then
         wp elasticpress activate-feature autosuggest --allow-root --path=/var/www/html 2>/dev/null || true
         
         # Indexar conteúdo
-        echo "   Indexando conteúdo no Elasticsearch..."
-        wp elasticpress index --setup --allow-root --path=/var/www/html 2>/dev/null || echo "   ⚠️ Indexação será feita posteriormente via admin"
+        echo "   Sincronizando conteúdo no Elasticsearch..."
+        if wp elasticpress sync --setup --yes --allow-root --path=/var/www/html >/dev/null 2>&1; then
+            echo "   ✅ ElasticPress sincronizado"
+        elif wp elasticpress index --setup --yes --allow-root --path=/var/www/html >/dev/null 2>&1; then
+            echo "   ✅ ElasticPress indexado"
+        else
+            echo "   ⚠️ Indexação será feita posteriormente via admin"
+        fi
         
         echo "✅ ElasticPress configurado!"
     else
