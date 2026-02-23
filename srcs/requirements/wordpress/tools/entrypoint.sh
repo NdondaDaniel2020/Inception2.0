@@ -98,13 +98,6 @@ if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; the
         AUTHOR_EMAIL=""
     fi
     
-    # Senha vem do db_password
-    if [ -f /run/secrets/db_password ]; then
-        USER_PASS="$(cat /run/secrets/db_password)"
-    else
-        USER_PASS="changeme"
-    fi
-    
     # Baixar WordPress core se necessário
     if [ ! -f /var/www/html/wp-load.php ]; then
         echo "📥 Baixando WordPress..."
@@ -144,7 +137,7 @@ if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; the
         --url="https://${DOMAIN_NAME}" \
         --title="Organic Store" \
         --admin_user="$ADMIN_USER" \
-        --admin_password="$USER_PASS" \
+        --admin_password="$ADMIN_EMAIL" \
         --admin_email="$ADMIN_EMAIL" \
         --allow-root \
         --path=/var/www/html
@@ -165,7 +158,7 @@ if ! wp core is-installed --allow-root --path=/var/www/html >/dev/null 2>&1; the
         echo "👤 Criando usuário autor: $AUTHOR_USER"
         wp user create "$AUTHOR_USER" "$AUTHOR_EMAIL" \
             --role=author \
-            --user_pass="$USER_PASS" \
+            --user_pass="$AUTHOR_EMAIL" \
             --allow-root \
             --path=/var/www/html 2>/dev/null || true
     fi
