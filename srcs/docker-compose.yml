@@ -1,12 +1,14 @@
 services:
 
   mariadb:
+    image: mariadb:1.0
+    pull_policy: never
     build:
       context: ./requirements/mariadb
       dockerfile: Dockerfile
     container_name: mariadb
     networks:
-      - network
+      - inception_network
     volumes:
       - mariadb_data:/var/lib/mysql
     restart: always
@@ -23,6 +25,8 @@ services:
       retries: 5
 
   wordpress:
+    image: wordpress:1.0
+    pull_policy: never
     build:
       context: ./requirements/wordpress
       dockerfile: Dockerfile
@@ -33,7 +37,7 @@ services:
     ports:
       - "9000:9000"
     networks:
-      - network
+      - inception_network
     restart: always
     env_file:
       - ./.env
@@ -45,6 +49,8 @@ services:
       - wordpress_data:/var/www/html
 
   nginx:
+    image: nginx:1.0
+    pull_policy: never
     build:
       context: ./requirements/nginx
       dockerfile: Dockerfile
@@ -54,7 +60,7 @@ services:
     ports:
       - "443:443"
     networks:
-      - network
+      - inception_network
     restart: always
     volumes:
       - wordpress_data:/var/www/html
@@ -62,6 +68,8 @@ services:
       - ./.env
 
   adminer:
+    image: adminer:1.0
+    pull_policy: never
     build:
       context: ./requirements/bonus/adminer
       dockerfile: Dockerfile
@@ -72,7 +80,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - network
+      - inception_network
     restart: always
     env_file:
       - ./.env
@@ -81,12 +89,14 @@ services:
       - db_password
 
   redis:
+    image: redis:1.0
+    pull_policy: never
     build:
       context: ./requirements/bonus/redis
       dockerfile: Dockerfile
     container_name: redis
     networks:
-      - network
+      - inception_network
     restart: always
     env_file:
       - ./.env
@@ -98,6 +108,8 @@ services:
       - mariadb
 
   ftp:
+    image: ftp:1.0
+    pull_policy: never
     build:
       context: ./requirements/bonus/ftp
       dockerfile: Dockerfile
@@ -106,7 +118,7 @@ services:
       - "21:21"
       - "21000-21010:21000-21010"
     networks:
-      - network
+      - inception_network
     restart: always
     env_file:
       - ./.env
@@ -118,6 +130,8 @@ services:
       - ftp_credentials
 
   elasticsearch:
+    image: elasticsearch:1.0
+    pull_policy: never
     build:
       context: ./requirements/bonus/elasticsearch
       dockerfile: Dockerfile
@@ -126,7 +140,7 @@ services:
       - "9200:9200"
       - "9300:9300"
     networks:
-      - network
+      - inception_network
     restart: always
     env_file:
       - ./.env
@@ -142,6 +156,8 @@ services:
       retries: 5
 
   myprofile:
+    image: myprofile:1.0
+    pull_policy: never
     build:
       context: ./requirements/bonus/myprofile
       dockerfile: Dockerfile
@@ -149,7 +165,7 @@ services:
     ports:
       - "8888:8888"
     networks:
-      - network
+      - inception_network
     restart: always
     volumes:
       - myprofile_data:/var/www/myprofile
@@ -169,7 +185,9 @@ secrets:
     file: ../secrets/ftp_credentials.txt
 
 networks:
-  network:
+  inception_network:
+    driver: bridge
+    name: inception_network
 
 volumes:
   mariadb_data:
