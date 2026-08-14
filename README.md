@@ -1,4 +1,6 @@
-*This project has been created as part of the 42 curriculum by nmatondo.*
+🇺🇸 **English** | 🇧🇷 [Versão em Português](docs/README.pt.md)
+
+*This project has been created as part of the 42 curriculum by Ndonda Daniel Matondo (nmatondo).*
 
 # Inception
 
@@ -66,8 +68,8 @@ make --version           # Should show 4.0+
 #### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd Inception
+git clone https://github.com/NdondaDaniel2020/Inception2.0.git
+cd Inception2.0
 ```
 
 #### 2. Configure Domain Name
@@ -238,7 +240,7 @@ Internet
     ├─→ [FTP:21, 21000-21010] ← File Transfer (passive mode)
     └─→ [MyProfile:8888] ← Static Personal Site
 
-All containers communicate via Docker bridge network "network"
+All containers communicate via Docker bridge network "inception_network"
 ```
 
 ### Data Persistence
@@ -393,7 +395,7 @@ This project is part of the 42 School curriculum and is intended for educational
 
 ## 👤 Author
 
-**nmatondo**
+**Ndonda Daniel Matondo (nmatondo)**
 - 42 Intra: nmatondo
 - Project: Inception
 
@@ -524,9 +526,9 @@ This approach combines Docker volume management with direct host path access for
 **Implementation in Inception:**
 ```yaml
 networks:
-  inception:
+  inception_network:
     driver: bridge
-    name: inception
+    name: inception_network
 ```
 Bridge networking provides isolated communication between containers while maintaining security boundaries from the host system.
 
