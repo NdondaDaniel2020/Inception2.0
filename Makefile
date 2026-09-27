@@ -2,7 +2,7 @@
 
 COMPOSE_FILE = srcs/docker-compose.yml
 PROJECT_NAME = inception
-DATA_PATH = /home/nmatondo/data
+DATA_PATH = ~/data
 
 all: build up
 
@@ -22,20 +22,13 @@ down:
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down
 
 clean: down
-	@echo "🧹 Cleaning containers..."
+	@echo "🧹 Cleaning project containers and volumes..."
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down -v
-	@docker system prune -af
 
 fclean: clean
-	@echo "🗑️  Removing all Docker data..."
-	@docker stop $$(docker ps -qa) 2>/dev/null || true
-	@docker rm $$(docker ps -qa) 2>/dev/null || true
-	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
-	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true
-	@docker network rm $$(docker network ls -q) 2>/dev/null || true
-	@echo "🗑️  Removing persistent data directories..."
-	@sudo rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis $(DATA_PATH)/elasticsearch $(DATA_PATH)/myprofile 2>/dev/null || true
-	@echo "✅ All data removed!"
+	@echo "🗑️  Removing project images and data..."
+	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down --rmi all -v 2>/dev/null || true
+	@rm -rf $(DATA_PATH)/mariadb $(DATA_PATH)/wordpress $(DATA_PATH)/redis $(DATA_PATH)/elasticsearch $(DATA_PATH)/myprofile 2>/dev/null || true
 
 logs:
 	@docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) logs -f

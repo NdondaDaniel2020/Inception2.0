@@ -195,28 +195,28 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /home/nmatondo/data/mariadb
+      device: ~/data/mariadb
   wordpress_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/nmatondo/data/wordpress
+      device: ~/data/wordpress
   redis_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/nmatondo/data/redis
+      device: ~/data/redis
   elasticsearch_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/nmatondo/data/elasticsearch
+      device: ~/data/elasticsearch
   myprofile_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/nmatondo/data/myprofile
+      device: ~/data/myprofile
