@@ -8,3 +8,10 @@ srcs/requirements/bonus/.env
 
 # Docker volumes data
 /home/nmatondo/data/
+
+# Portfolio
+.portfolio/raw-captures/
+
+# Agents
+.agents/
+

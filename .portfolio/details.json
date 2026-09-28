@@ -1,0 +1,145 @@
+{
+  "id": "inception",
+  "name": "Inception 2.0 — Infraestrutura Docker",
+  "tagline": {
+    "pt": "Orquestração completa de uma infraestrutura web baseada em contentores Docker com NGINX, WordPress, MariaDB, Redis e Alpine Linux.",
+    "en": "Complete orchestration of a Docker container-based web infrastructure with NGINX, WordPress, MariaDB, Redis, and Alpine Linux."
+  },
+  "category": "devops",
+  "featured": true,
+  "architecture_type": "Docker Container-based Microservices Infrastructure",
+  "about": {
+    "pt": "Inception é um projeto focado em System Administration e DevOps, onde o objetivo é construir e orquestrar uma infraestrutura web completa utilizando Docker e Docker Compose a partir do zero. A arquitetura inclui múltiplos serviços configurados individualmente em contentores baseados em Alpine Linux 3.22, garantindo um ambiente leve (minimal attack surface) e seguro. A comunicação ocorre numa rede isolada (Docker Network), com persistência de dados via Docker Volumes e gestão segura de senhas via Docker Secrets. O ambiente providencia um site WordPress acelerado por Redis Cache, uma base de dados MariaDB com interface Adminer, um servidor FTP para transferências e uma landing page (MyProfile). Cada serviço possui health checks robustos e resolve o problema do PID 1, assegurando encerramentos corretos dos processos.",
+    "en": "Inception is a project focused on System Administration and DevOps, aiming to build and orchestrate a complete web infrastructure using Docker and Docker Compose from scratch. The architecture features multiple services individually configured in Alpine Linux 3.22 containers, ensuring a lightweight (minimal attack surface) and secure environment. Communication takes place on an isolated Docker Network, with data persistence via Docker Volumes and secure password management via Docker Secrets. The environment provides a WordPress site accelerated by Redis Cache, a MariaDB database with an Adminer interface, an FTP server for file transfers, and a landing page (MyProfile). Each service includes robust health checks and solves the PID 1 problem, ensuring graceful shutdowns."
+  },
+  "highlights": [
+    "Arquitetura multi-contentor orquestrada via Docker Compose numa rede isolada (bridge)",
+    "Criação de Dockerfiles personalizados a partir do Alpine Linux (sem usar imagens pré-configuradas)",
+    "Persistência de dados segura com Docker Volumes locais e gestão de credenciais via Docker Secrets",
+    "Reverse Proxy NGINX configurado com TLS 1.3",
+    "Sistema WordPress integrado nativamente com Redis Object Cache e base de dados relacional MariaDB",
+    "Serviços auxiliares de FTP (vsftpd) e administração de base de dados (Adminer)",
+    "Implementação de Health Checks automatizados e resolução de signals PID 1 para graceful shutdown"
+  ],
+  "technologies": [
+    "Docker",
+    "Docker Compose",
+    "Alpine Linux",
+    "NGINX",
+    "WordPress",
+    "MariaDB",
+    "Redis",
+    "vsftpd",
+    "Adminer"
+  ],
+  "links": {
+    "repository": "https://github.com/NdondaDaniel2020/Inception"
+  },
+  "media": {
+    "cover": "cover.webp",
+    "gallery": [
+      {
+        "type": "video",
+        "src": "gallery/01-demo-wordpress.mp4",
+        "caption": "Demonstração do Sistema WordPress com Plugins, Redis Cache e Interface Administrativa"
+      },
+      {
+        "type": "video",
+        "src": "gallery/02-demo-ftp.mp4",
+        "caption": "Acesso e Transferência de Ficheiros Segura via Servidor FTP"
+      },
+      {
+        "type": "video",
+        "src": "gallery/03-demo-adminer.mp4",
+        "caption": "Acesso Seguro à Base de Dados MariaDB através da Interface Adminer"
+      },
+      {
+        "type": "video",
+        "src": "gallery/04-demo-myprofile.mp4",
+        "caption": "Demonstração da Aplicação Auxiliar: MyProfile Landing Page"
+      },
+      {
+        "type": "image",
+        "src": "gallery/01-inception-readme.webp",
+        "caption": "Documentação e Estrutura da Infraestrutura (README)"
+      },
+      {
+        "type": "image",
+        "src": "gallery/02-wordpress-home.webp",
+        "caption": "Página Principal do WordPress a correr na Infraestrutura Inception"
+      },
+      {
+        "type": "image",
+        "src": "gallery/03-adminer-login.webp",
+        "caption": "Página de Login do Adminer para Gestão de Base de Dados"
+      },
+      {
+        "type": "image",
+        "src": "gallery/04-myprofile-home.webp",
+        "caption": "Website Pessoal MyProfile a correr como serviço Docker"
+      },
+      {
+        "type": "image",
+        "src": "gallery/05-wordpress-dashboard.webp",
+        "caption": "Painel de Controlo do WordPress (WP Admin)"
+      },
+      {
+        "type": "image",
+        "src": "gallery/10-wordpress-plugins.webp",
+        "caption": "Plugins Instalados no WordPress (Redis Cache, ElasticPress)"
+      },
+      {
+        "type": "image",
+        "src": "gallery/14-wordpress-redis-cache.webp",
+        "caption": "Configuração da Conexão do WordPress ao Contentor Redis Cache"
+      },
+      {
+        "type": "image",
+        "src": "gallery/16-terminal-ftp-session.webp",
+        "caption": "Sessão FTP ativa mostrando conexão e transferência de arquivos"
+      }
+    ],
+    "videos": [
+      {
+        "id": "demo-wordpress",
+        "file": "01-demo-wordpress.mp4",
+        "title": "Demonstração da Infraestrutura WordPress",
+        "description": "Navegação completa no WordPress configurado: Acesso via NGINX proxy, navegação no painel, verificação do status dos plugins e do Object Cache do Redis.",
+        "category": "devops",
+        "duration": "1m 14s",
+        "size_mb": 2.30,
+        "src": "videos/01-demo-wordpress.mp4"
+      },
+      {
+        "id": "demo-ftp",
+        "file": "02-demo-ftp.mp4",
+        "title": "Acesso Servidor FTP",
+        "description": "Demonstração do serviço FTP isolado, estabelecendo conexão com os dados do WordPress.",
+        "category": "devops",
+        "duration": "32s",
+        "size_mb": 0.72,
+        "src": "videos/02-demo-ftp.mp4"
+      },
+      {
+        "id": "demo-adminer",
+        "file": "03-demo-adminer.mp4",
+        "title": "Interface Adminer - MariaDB",
+        "description": "Gestão e manipulação do banco de dados MariaDB da infraestrutura através do cliente web Adminer.",
+        "category": "devops",
+        "duration": "30s",
+        "size_mb": 0.77,
+        "src": "videos/03-demo-adminer.mp4"
+      },
+      {
+        "id": "demo-myprofile",
+        "file": "04-demo-myprofile.mp4",
+        "title": "Aplicação Auxiliar - MyProfile",
+        "description": "Demonstração do site auxiliar pessoal que corre num contentor da infraestrutura Inception.",
+        "category": "devops",
+        "duration": "18s",
+        "size_mb": 1.40,
+        "src": "videos/04-demo-myprofile.mp4"
+      }
+    ]
+  }
+}
